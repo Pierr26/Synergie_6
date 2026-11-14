@@ -198,7 +198,7 @@ export async function renderBody(): Promise<Html> {
                     <button type="button" class="btn btn-quiet btn-small" data-action="body-3d-close">${icon('close')}Back to 2D</button>`;
     const angles: [number, string][] = [[0.3, 'Front'], [1.5708, 'Side'], [3.1416, 'Back']];
     return html`
-    ${pageHead('Body & Risks', 'Choose a body region to see why it matters in space, what QUINTA records, and what you can do. Sources are NASA Human Research Program pages.', simTag('Educational content'))}
+    ${pageHead('Body & Risks', 'Choose a body region to see why it matters in space, what HEXTA records, and what you can do. Sources are NASA Human Research Program pages.', simTag('Educational content'))}
     <div class="body-layout" data-mount="body">
       <section class="card body-map" aria-labelledby="map-h">
         <h2 id="map-h" class="sr-only">Body regions</h2>
@@ -221,7 +221,7 @@ export async function renderBody(): Promise<Html> {
           </div>
         </div>
         <div class="v3d-bar">${v3d}</div>
-        <p class="fine v3d-credit">3D anatomy: <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noopener">HuBMAP Human Reference Atlas</a> reference bodies (Visible Human, Allen brain), CC BY 4.0, simplified for QUINTA. Motion is an illustration.</p>
+        <p class="fine v3d-credit">3D anatomy: <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noopener">HuBMAP Human Reference Atlas</a> reference bodies (Visible Human, Allen brain), CC BY 4.0, simplified for HEXTA. Motion is an illustration.</p>
         <ul class="region-list organ-chips" aria-label="Body regions">
           ${REGIONS.map((r) => html`<li><a href="/body?region=${r.id}" data-link class="${r.id === region.id ? 'active' : ''}" ${r.id === region.id ? html`aria-current="true"` : ''}><b>${r.name}</b><small>${r.system}</small></a></li>`)}
         </ul>
@@ -231,7 +231,7 @@ export async function renderBody(): Promise<Html> {
         <div class="organ-h"><div><h2 id="sheet-h">${region.name}</h2><span class="sys">${region.system} · ${region.hazards.map((h) => HAZARDS.find((x) => x.id === h)!.name).join(' · ')}</span></div></div>
         <h3>Why this matters</h3>
         <p>${region.why}</p>
-        <h3>What QUINTA records</h3>
+        <h3>What HEXTA records</h3>
         <ul class="measure-links">${region.measure.map((m) => html`<li><a href="${m.href}" data-link>${m.label} ${icon('arrow')}</a></li>`)}</ul>
         <div class="note"><b>How to read it</b>${region.read}</div>
         <h3>What you can do</h3>
@@ -248,6 +248,6 @@ export async function renderBody(): Promise<Html> {
     <section class="card" aria-labelledby="hz-h">
       <h2 id="hz-h">The five hazards of human spaceflight</h2>
       <p class="hint">NASA HRP groups spaceflight risks into five hazards. <a href="${SOURCES.S01.url}" target="_blank" rel="noopener">NASA Human Research Program</a></p>
-      <ul class="hazards">${HAZARDS.map((h) => html`<li><b>${h.name}</b><p>${h.summary}</p><small>In QUINTA: ${h.link}</small></li>`)}</ul>
+      <ul class="hazards">${HAZARDS.map((h) => html`<li><b>${h.name}</b><p>${h.summary}</p><small>In HEXTA: ${h.link}</small></li>`)}</ul>
     </section>`;
 }

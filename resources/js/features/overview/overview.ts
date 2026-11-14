@@ -205,7 +205,7 @@ export async function renderOverview(): Promise<Html> {
       <div class="card-h"><h3 id="meas-h">Recorded measurements</h3><small>Select a line for its trend</small></div>
       <div class="ind-sum" aria-live="polite"><span class="cnt"><i></i><b>${recorded}</b> in zone</span><span class="cnt wt"><i></i><b>${review}</b> to watch</span><span class="cnt al"><i></i><b>${act}</b> to review</span><span class="cnt na"><i></i><b>${missing}</b> no reading</span></div>
       <div class="ind-list">${rows}</div>
-      <p class="legend-g">Green, amber and coral are demo zones, not clinical thresholds. Each value keeps its time, method and source. Gaps stay visible; QUINTA never fills them.</p>
+      <p class="legend-g">Green, amber and coral are demo zones, not clinical thresholds. Each value keeps its time, method and source. Gaps stay visible; HEXTA never fills them.</p>
     </section>`;
 
     const hazards = html`<section class="card" aria-labelledby="hz-h">

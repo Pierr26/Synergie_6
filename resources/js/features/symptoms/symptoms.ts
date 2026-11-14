@@ -49,7 +49,7 @@ async function simulatedPhoto(): Promise<{ name: string; mime: string; data: Arr
     x.fillRect(0, 430, 640, 50);
     x.fillStyle = '#fff';
     x.font = '600 20px sans-serif';
-    x.fillText('SIMULATED IMAGE · QUINTA demo · not a real person', 20, 462);
+    x.fillText('SIMULATED IMAGE · HEXTA demo · not a real person', 20, 462);
     const blob = await new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('Image could not be generated'))), 'image/png'));
     return { name: 'simulated-skin-mark.png', mime: 'image/png', data: await blob.arrayBuffer(), simulated: true };
 }

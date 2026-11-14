@@ -11,7 +11,7 @@ export async function renderEntry(): Promise<Html> {
         <span class="entry-credit">AI-generated image</span>
       </div>
       <main class="entry-panel" id="main" tabindex="-1">
-        <img class="entry-logo" src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="200" height="55">
+        <img class="entry-logo" src="/assets/brand/hexta-logo.svg" alt="HEXTA" width="110" height="134">
         <h1 tabindex="-1">Crew health, even when the ground link drops.</h1>
         <p class="entry-lead">The astronaut logs sleep and drowsiness, the crew medical officer reviews the signal on board, and a crew member's report waits in the queue until the ground acknowledges it.</p>
         <div class="entry-choices">

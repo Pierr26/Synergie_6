@@ -1,6 +1,6 @@
 {
-  "name": "QUINTA — crew health",
-  "short_name": "QUINTA",
+  "name": "HEXTA — crew health",
+  "short_name": "HEXTA",
   "lang": "en",
   "start_url": "/",
   "scope": "/",
@@ -8,7 +8,7 @@
   "background_color": "#edf4f2",
   "theme_color": "#075b52",
   "icons": [
-    { "src": "/assets/brand/quinta-icone-app-180.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "/assets/brand/quinta-symbole-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "/assets/brand/hexta-icone-app-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/assets/brand/hexta-symbole-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
