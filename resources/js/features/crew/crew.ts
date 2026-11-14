@@ -127,11 +127,34 @@ export async function renderCrew(): Promise<Html> {
         }),
     );
     const week = Array.from({ length: 7 }, (_, i) => day - 6 + i);
+    const fromGround = (await repo.groundNotes(ws())).filter((n) => n.deliveredAt);
+    const houston = html`<section class="card houston" id="houston" aria-labelledby="hou-h">
+      <div class="card-h"><h3 id="hou-h">From Houston</h3><small>${app.groundLink ? 'Ground link up' : 'Ground link offline · new notes wait on Earth'}</small></div>
+      ${fromGround.length
+          ? html`<ol class="gn-list">${fromGround.slice(0, 3).map((n) => html`<li class="gn"><p>${n.text}</p><p class="gn-meta">${repo.memberStatic(ws(), n.authorId).alias} · <span class="mono">${hhmm(Date.parse(n.deliveredAt!))} UTC</span>${n.crewId ? ` · about ${repo.memberStatic(ws(), n.crewId).shortName}` : ''}</p></li>`)}</ol>`
+          : html`<p class="muted small">No note from the flight surgeon. Houston only sees the reports you choose to send.</p>`}
+    </section>`;
     const done = astronauts.length - rows.filter((r) => r.s.ci?.status !== 'submitted').length;
     return html`
     ${pageHead('Crew console', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${simTag()}${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
-    <div class="gd">
-      <div class="board-col">
+    <div class="cmo-top">
+      <section class="card watch" aria-labelledby="todo-h">
+          <div class="wt-h"><div><h3 id="todo-h">To review</h3><small>${notes.length ? `${notes.length} open item${notes.length > 1 ? 's' : ''} · newest first` : 'Watch list clear'}</small></div><span class="wt-ring" style="--p:${astronauts.length ? Math.round((done / astronauts.length) * 100) : 0}" title="Check-ins received today"><span>${done}/${astronauts.length}</span></span></div>
+          ${notes.length
+              ? html`<ul class="tasks todo">${notes.map((n) => html`<li class="task todo-${n.type} ${n.type === 'report-retry' ? 'al' : ''}">
+                  <span class="tk-box">${icon(n.type === 'report-retry' ? 'retry' : n.type === 'follow-up-completed' ? 'ok' : n.type === 'symptom-submitted' ? 'camera' : n.type === 'symptom-reply' ? 'followup' : 'review', 'sm')}</span>
+                  <div class="tk-main"><div class="tk-top"><b>${n.title}</b><span class="tk-who">${repo.memberStatic(ws(), n.subjectCrewId).shortName}</span><span class="tk-due">${hhmm(Date.parse(n.createdAt))}</span></div>
+                    <span class="tk-d">${n.body}${n.readAt ? '' : ' · unread'}</span>
+                    ${n.type === 'sleep-review' ? html`<span>${demoRuleTag()}</span>` : ''}
+                    <div class="tk-act"><a href="${n.link}" data-link data-read="${n.id}">Open</a></div></div>
+                </li>`)}</ul>`
+              : html`<p class="muted">${icon('ok')} Nothing waiting for review.</p>`}
+          <p class="wt-foot">The ring shows today’s check-ins received on board.</p>
+        </section>
+        ${houston}
+    </div>
+    <h2 class="sec-h">Crew at a glance</h2>
+    <div class="cmo-board">
         <section class="card board" aria-labelledby="crew-h">
           <div class="card-h"><h3 id="crew-h">Crew board</h3><small>Latest values · select a member for the file</small></div>
           <div class="bd" role="table" aria-label="Crew board">
@@ -163,20 +186,6 @@ export async function renderCrew(): Promise<Html> {
           </div>
           <p class="sl-foot">Diary nights only; actigraphy stays a separate series in each member file.</p>
         </section>
-      </div>
-      <section class="card watch" aria-labelledby="todo-h">
-        <div class="wt-h"><div><h3 id="todo-h">To review</h3><small>${notes.length ? `${notes.length} open item${notes.length > 1 ? 's' : ''} · newest first` : 'Watch list clear'}</small></div><span class="wt-ring" style="--p:${astronauts.length ? Math.round((done / astronauts.length) * 100) : 0}" title="Check-ins received today"><span>${done}/${astronauts.length}</span></span></div>
-        ${notes.length
-            ? html`<ul class="tasks todo">${notes.map((n) => html`<li class="task todo-${n.type} ${n.type === 'report-retry' ? 'al' : ''}">
-                <span class="tk-box">${icon(n.type === 'report-retry' ? 'retry' : n.type === 'follow-up-completed' ? 'ok' : n.type === 'symptom-submitted' ? 'camera' : n.type === 'symptom-reply' ? 'followup' : 'review', 'sm')}</span>
-                <div class="tk-main"><div class="tk-top"><b>${n.title}</b><span class="tk-due">${hhmm(Date.parse(n.createdAt))}</span></div>
-                  <span class="tk-d">${n.body}${n.readAt ? '' : ' · unread'}</span>
-                  ${n.type === 'sleep-review' ? html`<span>${demoRuleTag()}</span>` : ''}
-                  <div class="tk-act"><a href="${n.link}" data-link data-read="${n.id}">Open</a></div></div>
-              </li>`)}</ul>`
-            : html`<p class="muted">${icon('ok')} Nothing waiting for review.</p>`}
-        <p class="wt-foot">The ring shows today’s check-ins received on board.</p>
-      </section>
     </div>`;
 }
 

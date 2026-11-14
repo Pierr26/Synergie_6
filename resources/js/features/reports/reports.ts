@@ -60,7 +60,7 @@ interface Snap {
     followUps: { label: string; reason: string; status: string; createdAt: string; response: { at: string; text: string } | null }[];
 }
 
-function reportDoc(r: ReportRow): Html {
+export function reportDoc(r: ReportRow): Html {
     const s = JSON.parse(r.content) as Snap;
     const spot = s.observations.filter((o) => ['bp', 'spo2', 'temperature', 'glucose', 'resting_hr', 'mood', 'symptoms'].includes(o.variable));
     return html`<article class="report-doc print-area" aria-labelledby="rep-title">

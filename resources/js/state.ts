@@ -39,7 +39,7 @@ export function writePref(key: string, value: string | null): void {
 
 export const app: AppState = {
     ws: readPref<WorkspaceId>('quinta.ws', ['demo', 'explore'], null),
-    role: readPref<Role>('quinta.role', ['astronaut', 'cmo'], 'astronaut') ?? 'astronaut',
+    role: readPref<Role>('quinta.role', ['astronaut', 'cmo', 'ground'], 'astronaut') ?? 'astronaut',
     now: Date.now(),
     route: { path: '/', segments: [], query: new URLSearchParams() },
     groundLink: false,
@@ -60,5 +60,10 @@ export function ws(): WorkspaceId {
 /** identity of the current role in the current workspace */
 export function me(): string {
     const c = cfg();
-    return app.role === 'cmo' ? c.cmoId : c.astronautId;
+    return app.role === 'cmo' ? c.cmoId : app.role === 'ground' ? c.groundId : c.astronautId;
+}
+
+/** each role's home screen */
+export function homeFor(role: Role = app.role): string {
+    return role === 'cmo' ? '/crew' : role === 'ground' ? '/ground' : '/overview';
 }

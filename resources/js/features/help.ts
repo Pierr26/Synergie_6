@@ -2,6 +2,7 @@ import { icon } from '../components/icons';
 import { pageHead } from '../components/ui';
 import { html, type Html } from '../lib/html';
 import { registerActions } from '../router-actions';
+import type { Role } from '../domain/types';
 import { app, writePref } from '../state';
 import { SOURCES } from './body-risks/content';
 
@@ -10,7 +11,9 @@ interface Step {
     text: string;
 }
 
-const GUIDES: Record<'astronaut' | 'cmo', Step[]> = {
+const ROLE_NAME: Record<Role, string> = { astronaut: 'Astronaut', cmo: 'Crew medical officer', ground: 'Flight surgeon · Houston' };
+
+const GUIDES: Record<Role, Step[]> = {
     astronaut: [
         { title: 'Your daily check-in', text: 'Each morning, log your main sleep and how drowsy you feel. Optional fields come after. About one minute.' },
         { title: 'Reminder and snooze', text: 'At 07:00 UTC a banner says “Daily check-in is due”. Snooze 30 min if you are busy; the reminder returns at the new time.' },
@@ -22,6 +25,11 @@ const GUIDES: Record<'astronaut' | 'cmo', Step[]> = {
         { title: 'Review a signal', text: 'A notification opens the trend and the observations behind it. Record your review and request a follow-up if needed.' },
         { title: 'Individual report', text: 'Choose a member and period, generate a snapshot, print it, then decide whether to queue it for ground.' },
         { title: 'Receipts', text: 'A report shows Queued, Sending, Received or Retry available. Received only appears after the selected receiver acknowledges it.' },
+    ],
+    ground: [
+        { title: 'What reaches Earth', text: 'You see only the reports the crew medical officer decided to send, frozen, with their receipt. Check-ins, photos and live values stay on board.' },
+        { title: 'Link outages', text: 'When the ground link is down, nothing arrives and the crew keeps working. The console shows when the last report came in.' },
+        { title: 'Notes to the crew', text: 'Write advice or a question for the crew medical officer. It waits in Houston until the link returns, then appears in the crew console.' },
     ],
 };
 
@@ -44,7 +52,7 @@ function dialogHtml(): Html {
     const s = steps[step];
     return html`
     <form method="dialog" class="guide" data-action="guide-next">
-      <p class="eyebrow">${app.role === 'cmo' ? 'Crew medical officer' : 'Astronaut'} guide · ${step + 1} of ${steps.length}</p>
+      <p class="eyebrow">${ROLE_NAME[app.role]} guide · ${step + 1} of ${steps.length}</p>
       <h2 id="guide-title">${s.title}</h2>
       <p>${s.text}</p>
       <div class="guide-dots" aria-hidden="true">${steps.map((_, i) => html`<i class="${i === step ? 'on' : ''}"></i>`)}</div>
@@ -92,14 +100,13 @@ registerActions({
 });
 
 export async function renderHelp(): Promise<Html> {
-    const other = app.role === 'cmo' ? 'astronaut' : 'cmo';
     return html`
-    ${pageHead('Help', 'Short guides for each role. Available offline.', html`<button type="button" class="btn btn-primary" data-action="guide-open">${icon('play')}Reopen the ${app.role === 'cmo' ? 'CMO' : 'astronaut'} guide</button>`)}
-    <div class="grid-2">
-      ${(['astronaut', 'cmo'] as const).map(
+    ${pageHead('Help', 'Short guides for each role. Available offline.', html`<button type="button" class="btn btn-primary" data-action="guide-open">${icon('play')}Reopen the ${app.role === 'cmo' ? 'CMO' : app.role === 'ground' ? 'Houston' : 'astronaut'} guide</button>`)}
+    <div class="grid-3">
+      ${(['astronaut', 'cmo', 'ground'] as const).map(
           (r) => html`
-        <section class="card ${r === other ? 'muted-card' : ''}" aria-labelledby="h-${r}">
-          <h2 id="h-${r}">${r === 'cmo' ? 'Crew medical officer' : 'Astronaut'}</h2>
+        <section class="card ${r !== app.role ? 'muted-card' : ''}" aria-labelledby="h-${r}">
+          <h2 id="h-${r}">${ROLE_NAME[r]}</h2>
           <ol class="steps">${GUIDES[r].map((s) => html`<li><strong>${s.title}</strong><span>${s.text}</span></li>`)}</ol>
         </section>`,
       )}

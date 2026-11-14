@@ -51,7 +51,8 @@ export type NotificationType =
     | 'symptom-submitted'
     | 'symptom-reply'
     | 'symptom-more-info'
-    | 'symptom-feedback';
+    | 'symptom-feedback'
+    | 'ground-note';
 
 export interface NotificationRow {
     id: string;
@@ -118,6 +119,19 @@ export interface ReportRow {
     queue: QueueInfo;
 }
 
+/** A note written in Houston. It waits on Earth until the ground link is up, then reaches the CMO on board. */
+export interface GroundNoteRow {
+    id: string;
+    ws: WorkspaceId;
+    authorId: string;
+    /** report it answers, if any */
+    reportId: string | null;
+    crewId: string | null;
+    text: string;
+    createdAt: string;
+    deliveredAt: string | null;
+}
+
 export interface GroundSimRow {
     reportId: string;
     sha256: string;
@@ -139,6 +153,7 @@ export class QuintaDb extends Dexie {
     symptomReports!: Table<SymptomReport, string>;
     attachments!: Table<SymptomAttachment, string>;
     symptomReviews!: Table<SymptomReviewEntry, string>;
+    groundNotes!: Table<GroundNoteRow, string>;
 
     constructor(name = 'quinta') {
         super(name);
@@ -161,6 +176,8 @@ export class QuintaDb extends Dexie {
             attachments: 'id, ws, reportId',
             symptomReviews: 'id, ws, reportId',
         });
+        // v3: notes from the flight surgeon in Houston (uplink, store-and-forward)
+        this.version(3).stores({ groundNotes: 'id, ws' });
     }
 }
 
@@ -171,7 +188,7 @@ export function useDatabase(instance: QuintaDb): void {
     db = instance;
 }
 
-export const WS_TABLES = ['kv', 'members', 'observations', 'checkins', 'tasks', 'notifications', 'requests', 'alerts', 'labs', 'reports', 'symptomReports', 'attachments', 'symptomReviews'] as const;
+export const WS_TABLES = ['kv', 'members', 'observations', 'checkins', 'tasks', 'notifications', 'requests', 'alerts', 'labs', 'reports', 'symptomReports', 'attachments', 'symptomReviews', 'groundNotes'] as const;
 
 export function uuid(): string {
     return crypto.randomUUID();

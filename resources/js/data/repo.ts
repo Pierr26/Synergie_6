@@ -7,7 +7,7 @@ import { hhmm, missionDay, utcStamp } from '../domain/time';
 import type { Member, Observation, Role, WorkspaceId } from '../domain/types';
 import { MEMBERS, WORKSPACES } from '../demo/config';
 import { seedWorkspace } from '../demo/seed';
-import { db, uuid, WS_TABLES, type AlertRow, type CheckinForm, type CheckinRecord, type NotificationRow, type NotificationType, type ReportRow, type RequestRow } from './db';
+import { db, uuid, WS_TABLES, type AlertRow, type CheckinForm, type CheckinRecord, type GroundNoteRow, type NotificationRow, type NotificationType, type ReportRow, type RequestRow } from './db';
 
 /* ------------------------------------------------------------------ kv / clock */
 
@@ -578,6 +578,7 @@ export async function processQueue(ws: WorkspaceId, link: LinkState, now: () => 
                 await db.reports.update(r.id, { queue: q });
                 if (q.state === 'received') {
                     await notify({ eventKey: `received|${r.id}`, ws, recipientId: r.authorId, recipientRole: 'cmo', subjectCrewId: r.crewId, type: 'report-received', title: 'Ground report received', body: `${memberStatic(ws, r.crewId).alias} · Day ${r.fromDay}–${r.toDay} · ${receipt.receiver} · ${utcStamp(Date.parse(receipt.receivedAt))}`, link: `/reports?report=${r.id}`, active: false }, now());
+                    await notify({ eventKey: `ground-in|${r.id}`, ws, recipientId: WORKSPACES[ws].groundId, recipientRole: 'ground', subjectCrewId: r.crewId, type: 'report-received', title: 'New report from the crew', body: `${memberStatic(ws, r.crewId).alias} · Day ${r.fromDay}–${r.toDay} · sent by the crew medical officer`, link: `/ground?report=${r.id}` }, now());
                     return;
                 }
             }
@@ -755,5 +756,36 @@ export async function replySymptomReport(ws: WorkspaceId, reportId: string, crew
 }
 
 /* ------------------------------------------------------------------ helpers for views */
+
+/* ------------------------------------------------------------------ ground (Houston) */
+
+/** Reports the ground actually holds: only those with a receipt. Everything else stays on board. */
+export async function receivedReports(ws: WorkspaceId): Promise<ReportRow[]> {
+    return (await reportsFor(ws)).filter((r) => r.queue.state === 'received' && r.queue.receipt).sort((a, b) => b.queue.receipt!.receivedAt.localeCompare(a.queue.receipt!.receivedAt));
+}
+
+export async function groundNotes(ws: WorkspaceId): Promise<GroundNoteRow[]> {
+    return (await db.groundNotes.where('ws').equals(ws).toArray()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function addGroundNote(ws: WorkspaceId, authorId: string, text: string, reportId: string | null, now: number): Promise<GroundNoteRow> {
+    const report = reportId ? await db.reports.get(reportId) : undefined;
+    const row: GroundNoteRow = { id: uuid(), ws, authorId, reportId: report?.id ?? null, crewId: report?.crewId ?? null, text, createdAt: new Date(now).toISOString(), deliveredAt: null };
+    await db.groundNotes.put(row);
+    return row;
+}
+
+/** Store-and-forward uplink: called when the simulated ground link is up. Returns how many notes reached the crew. */
+export async function deliverGroundNotes(ws: WorkspaceId, now: number): Promise<number> {
+    const waiting = (await db.groundNotes.where('ws').equals(ws).toArray()).filter((n) => !n.deliveredAt);
+    const cfg = WORKSPACES[ws];
+    for (const n of waiting) {
+        const at = new Date(now).toISOString();
+        await db.groundNotes.update(n.id, { deliveredAt: at });
+        const author = memberStatic(ws, n.authorId).alias;
+        await notify({ eventKey: `ground-note|${n.id}`, ws, recipientId: cfg.cmoId, recipientRole: 'cmo', subjectCrewId: n.crewId ?? cfg.astronautId, type: 'ground-note', title: `Note from Houston · ${author}`, body: n.text.length > 120 ? `${n.text.slice(0, 117)}…` : n.text, link: '/crew#houston' }, now);
+    }
+    return waiting.length;
+}
 
 export type { NotificationType, Role };

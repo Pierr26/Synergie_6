@@ -1,5 +1,6 @@
 export type WorkspaceId = 'demo' | 'explore';
-export type Role = 'astronaut' | 'cmo';
+/** astronaut and crew medical officer are on board; ground is the flight surgeon in Houston */
+export type Role = 'astronaut' | 'cmo' | 'ground';
 
 /** valid: usable · check: kept but needs verification · not-recorded: explicit absence · invalid: excluded */
 export type Quality = 'valid' | 'check' | 'not-recorded' | 'invalid';
@@ -67,5 +68,7 @@ export interface WorkspaceConfig {
     rules: string[];
     astronautId: string;
     cmoId: string;
+    /** flight surgeon on Earth: sees only what the CMO transmits */
+    groundId: string;
     simulatedClock: boolean;
 }

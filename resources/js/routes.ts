@@ -2,6 +2,8 @@ import type { Html } from './lib/html';
 import { renderBody } from './features/body-risks/body';
 import { renderCheckin } from './features/check-in/checkin';
 import { renderCrew } from './features/crew/crew';
+import { renderGround } from './features/ground/ground';
+import { renderLog } from './features/log/log';
 import { renderFollowUp } from './features/follow-up/followup';
 import { renderHelp } from './features/help';
 import { renderMeasurements } from './features/measurements/measurements';
@@ -20,6 +22,8 @@ export const routes: Record<string, () => Promise<Html>> = {
     body: renderBody,
     'follow-up': renderFollowUp,
     crew: renderCrew,
+    ground: renderGround,
+    log: renderLog,
     notifications: renderNotifications,
     reports: renderReports,
     help: renderHelp,

@@ -3,7 +3,7 @@ import { QUEUE_LABEL, type QueueState } from '../domain/queue';
 import { hhmm, longDate, missionDay } from '../domain/time';
 import { isNight } from '../fx';
 import { html, type Html } from '../lib/html';
-import { app, cfg, me, ws } from '../state';
+import { app, cfg, homeFor, me, ws } from '../state';
 import { icon } from './icons';
 import { takePageTitle } from './ui';
 
@@ -16,24 +16,30 @@ interface NavItem {
 }
 
 export function navItems(badges: Record<string, number> = {}): NavItem[] {
+    if (app.role === 'ground')
+        return [
+            { href: '/ground', label: 'Houston', ic: 'link', match: ['ground'], badge: badges.ground },
+            { href: '/body', label: 'Body & Risks', ic: 'body', match: ['body'] },
+            { href: '/help', label: 'Help', ic: 'help', match: ['help'] },
+        ];
     if (app.role === 'cmo')
         return [
-            { href: '/crew', label: 'Crew console', ic: 'crew', match: ['crew'], badge: badges.crew },
+            { href: '/crew', label: 'To review', ic: 'crew', match: ['crew'], badge: badges.crew },
             { href: '/reports', label: 'Reports', ic: 'report', match: ['reports'] },
             { href: '/trends', label: 'Trends', ic: 'trends', match: ['trends'] },
             { href: '/body', label: 'Body & Risks', ic: 'body', match: ['body'] },
             { href: '/help', label: 'Help', ic: 'help', match: ['help'] },
         ];
+    // astronaut: four places only. Help stays one tap away in the header.
     return [
-        { href: '/overview', label: 'Overview', ic: 'home', match: ['overview', ''] },
-        { href: '/check-in', label: 'Check-in', ic: 'checkin', match: ['check-in'], badge: badges.checkin },
-        { href: '/trends', label: 'Trends', ic: 'trends', match: ['trends'] },
-        { href: '/body', label: 'Body & Risks', ic: 'body', match: ['body'] },
-        { href: '/follow-up', label: 'Follow-up', ic: 'followup', match: ['follow-up'], badge: badges.followup },
-        { href: '/measurements', label: 'Measurements', ic: 'measure', match: ['measurements'] },
-        { href: '/help', label: 'Help', ic: 'help', match: ['help'] },
+        { href: '/overview', label: 'Today', ic: 'home', match: ['overview', ''] },
+        { href: '/log', label: 'Log', ic: 'checkin', match: ['log', 'check-in', 'measurements'], badge: badges.checkin },
+        { href: '/trends', label: 'My health', ic: 'trends', match: ['trends', 'body'] },
+        { href: '/follow-up', label: 'Messages', ic: 'followup', match: ['follow-up'], badge: badges.followup },
     ];
 }
+
+const ROLE_GROUP: Record<string, string> = { astronaut: 'Astronaut · on board', cmo: 'Crew medical officer · on board', ground: 'Flight surgeon · Houston' };
 
 function isActive(item: NavItem): boolean {
     return item.match.includes(app.route.segments[0] ?? '');
@@ -42,6 +48,10 @@ function isActive(item: NavItem): boolean {
 /** What the sidebar "Today" card says: the one state that matters now, in words. */
 async function todayStatus(): Promise<{ text: string; tone: 'ok' | 'wt' | 'al'; badges: Record<string, number> }> {
     const c = cfg();
+    if (app.role === 'ground') {
+        const fresh = (await repo.notificationsFor(ws(), me())).filter((n) => !n.readAt).length;
+        return { text: fresh ? `${fresh} new report${fresh > 1 ? 's' : ''}` : app.groundLink ? 'In contact with the crew' : 'Link down', tone: fresh ? 'wt' : app.groundLink ? 'ok' : 'wt', badges: { ground: fresh } };
+    }
     if (app.role === 'cmo') {
         const open = (await repo.notificationsFor(ws(), me())).filter((n) => n.active && ['sleep-review', 'review-requested', 'follow-up-completed', 'report-retry'].includes(n.type)).length;
         return { text: open ? `${open} item${open > 1 ? 's' : ''} to review` : 'Nothing to review', tone: open ? 'al' : 'ok', badges: { crew: open } };
@@ -72,12 +82,12 @@ export async function renderShell(view: Html): Promise<Html> {
     const demo = ws() === 'demo';
     const title = takePageTitle();
     // phone tab bar: five slots. With more screens, the four most used stay and the rest open from "More".
-    const tabOrder = ['/overview', '/check-in', '/follow-up', '/trends'];
+    const tabOrder = ['/crew', '/reports', '/trends', '/body'];
     const tabs = items.length <= 5 ? items : tabOrder.map((h) => items.find((i) => i.href === h)!);
     const rest = items.filter((i) => !tabs.includes(i));
 
     return html`
-    ${previewBar(demo, astro.shortName, cmo.shortName)}
+    ${previewBar(demo, astro.shortName, cmo.shortName, repo.memberStatic(ws(), c.groundId).shortName)}
     <div class="app ${demo ? 'is-demo' : 'is-explore'}">
       <aside class="side" aria-label="Main navigation">
         <div class="sb-top">
@@ -85,12 +95,12 @@ export async function renderShell(view: Html): Promise<Html> {
             <img src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="132" height="36">
           </a>
         </div>
-        <a href="${app.role === 'cmo' ? '/crew' : '/overview'}" data-link class="sb-today">
+        <a href="${homeFor()}" data-link class="sb-today">
           <span class="sb-orb t-${status.tone}" aria-hidden="true"><b>${day}</b></span>
           <span><span class="sb-k">Today · Day ${day}</span><span class="sb-st st-${status.tone}">${status.text}</span><span class="sb-clock mono">${hhmm(app.now)} UTC</span></span>
         </a>
         <nav class="sb-nav">
-          <span class="sb-group">${app.role === 'cmo' ? 'Crew medical officer' : 'Astronaut'}</span>
+          <span class="sb-group">${ROLE_GROUP[app.role]}</span>
           ${items.map((i) => html`<a href="${i.href}" data-link class="sb-item" ${isActive(i) ? html`aria-current="page"` : ''}><span class="sb-ico">${icon(i.ic)}</span><span class="sb-lbl">${i.label}</span>${i.badge ? html`<span class="sb-badge" aria-hidden="true">${i.badge}</span>` : ''}</a>`)}
         </nav>
         <div class="side-foot">
@@ -119,6 +129,7 @@ export async function renderShell(view: Html): Promise<Html> {
             ${queueSummary.length ? html`<a href="/reports" data-link class="chip info" title="Ground report queue">${icon('send', 'sm')}Reports <b>${queueSummary.join(' · ')}</b></a>` : ''}
             <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><span class="pal-l">Go to</span><kbd>Ctrl K</kbd></button>
             <button type="button" class="chip night-btn" data-action="night-toggle" aria-pressed="${isNight()}" title="Soft night: warm, dark colours for the sleep period">${icon('moon', 'sm')}<span class="sr-only">Soft night</span></button>
+            ${app.role === 'astronaut' ? html`<a href="/help" data-link class="chip help-btn" aria-label="Help">${icon('help', 'sm')}</a>` : ''}
             <a href="/notifications" data-link class="chip bell ${app.route.segments[0] === 'notifications' ? 'active' : ''}" aria-label="Notifications, ${app.unread} unread">${icon('bell', 'sm')}${app.unread ? html`<span class="count">${app.unread}</span>` : ''}</a>
           </div>
         </header>
@@ -126,7 +137,7 @@ export async function renderShell(view: Html): Promise<Html> {
         <main id="main" tabindex="-1" class="view">${view}</main>
         <p class="disclaimer">QUINTA · Synergy 5 research prototype for the NASA Space Apps Challenge 2026. Simulated data and demo rules, no clinical validation, not affiliated with NASA. <a href="/help#credits" data-link>Sources and credits</a></p>
         <nav class="tabbar" aria-label="Main navigation">
-          ${tabs.map((i) => html`<a href="${i.href}" data-link ${isActive(i) ? html`aria-current="page"` : ''}>${icon(i.ic)}<span>${i.label.replace(' & Risks', '').replace('Crew console', 'Crew')}</span>${i.badge ? html`<i class="dotb" aria-hidden="true"></i>` : ''}</a>`)}
+          ${tabs.map((i) => html`<a href="${i.href}" data-link ${isActive(i) ? html`aria-current="page"` : ''}>${icon(i.ic)}<span>${i.label.replace(' & Risks', '').replace('To review', 'Review')}</span>${i.badge ? html`<i class="dotb" aria-hidden="true"></i>` : ''}</a>`)}
           ${rest.length ? html`<button type="button" data-action="palette" class="${rest.some(isActive) ? 'on' : ''}" aria-label="More screens and actions">${icon('menu')}<span>More</span></button>` : ''}
         </nav>
       </div>
@@ -134,7 +145,7 @@ export async function renderShell(view: Html): Promise<Html> {
 }
 
 /** The mockup's preview bar: product line, demo scenario controls, role. Outside the app frame. */
-function previewBar(demo: boolean, astro: string, cmo: string): Html {
+function previewBar(demo: boolean, astro: string, cmo: string, ground: string): Html {
     return html`
     <div class="preview">
       <span class="pv-line"><strong>QUINTA</strong> · ${demo ? 'guided demo' : 'explore app'} · Synergy 5 · simulated data</span>
@@ -150,9 +161,10 @@ function previewBar(demo: boolean, astro: string, cmo: string): Html {
           <label class="scn-check"><input type="checkbox" data-action="lose-receipt" ${app.loseNextReceipt ? 'checked' : ''}> Lose next receipt</label>
         </section>`
           : html`<span class="scn"><span class="scn-l">Real clock · no mission rule configured</span></span>`}
-      <div class="pv-btns" role="group" aria-label="Role on board">
+      <div class="pv-btns" role="group" aria-label="Role">
         <button type="button" data-action="role" data-role="astronaut" aria-pressed="${app.role === 'astronaut'}">Astronaut · ${astro}</button>
         <button type="button" data-action="role" data-role="cmo" aria-pressed="${app.role === 'cmo'}">CMO · ${cmo}</button>
+        <button type="button" data-action="role" data-role="ground" aria-pressed="${app.role === 'ground'}">Houston · ${ground}</button>
       </div>
     </div>`;
 }
@@ -220,7 +232,7 @@ async function coach(): Promise<Html> {
       <div class="coach-now">
         ${cur
             ? html`<p><b>Step ${current + 1} of 5.</b> ${cur.why}</p><button type="button" class="coach-cta" ${cur.attrs}>${cur.cta}${icon('arrow', 'sm')}</button>`
-            : html`<p><b>Scenario complete.</b> Reminder, check-in, crew review, report and receipt all happened on board.</p><button type="button" class="coach-cta ghost" data-action="scenario" data-day="142">Play it again${icon('retry', 'sm')}</button>`}
+            : html`<p><b>Scenario complete.</b> Everything happened on board. The report has now reached Houston.</p>${app.role !== 'ground' ? html`<button type="button" class="coach-cta" data-action="coach-go" data-role="ground" data-href="/ground">See it in Houston${icon('arrow', 'sm')}</button>` : ''}<button type="button" class="coach-cta ghost" data-action="scenario" data-day="142">Play it again${icon('retry', 'sm')}</button>`}
         <button type="button" class="coach-x" data-action="coach-hide" aria-label="Hide the mission guide">${icon('close', 'sm')}</button>
       </div>
     </section>`;

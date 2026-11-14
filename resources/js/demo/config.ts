@@ -11,6 +11,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceConfig> = {
         rules: ['SLEEP-001'],
         astronautId: 'moreau',
         cmoId: 'haddad',
+        groundId: 'brennan',
         simulatedClock: true,
     },
     explore: {
@@ -23,6 +24,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceConfig> = {
         rules: [],
         astronautId: 'okafor',
         cmoId: 'ibarra',
+        groundId: 'nakamura',
         simulatedClock: false,
     },
 };
@@ -32,11 +34,13 @@ export const MEMBERS: Record<WorkspaceId, Omit<Member, 'ws'>[]> = {
         { id: 'moreau', alias: 'Cdr K. Moreau', shortName: 'Moreau', initials: 'KM', role: 'astronaut', title: 'Commander' },
         { id: 'sato', alias: 'FE H. Sato', shortName: 'Sato', initials: 'HS', role: 'astronaut', title: 'Flight engineer' },
         { id: 'haddad', alias: 'Dr A. Haddad', shortName: 'Haddad', initials: 'AH', role: 'cmo', title: 'Crew medical officer' },
+        { id: 'brennan', alias: 'Dr J. Brennan', shortName: 'Brennan', initials: 'JB', role: 'ground', title: 'Flight surgeon · Houston' },
     ],
     explore: [
         { id: 'okafor', alias: 'I. Okafor', shortName: 'Okafor', initials: 'IO', role: 'astronaut', title: 'Mission specialist' },
         { id: 'lindqvist', alias: 'M. Lindqvist', shortName: 'Lindqvist', initials: 'ML', role: 'astronaut', title: 'Flight engineer' },
         { id: 'ibarra', alias: 'Dr R. Ibarra', shortName: 'Ibarra', initials: 'RI', role: 'cmo', title: 'Crew medical officer' },
+        { id: 'nakamura', alias: 'Dr S. Nakamura', shortName: 'Nakamura', initials: 'SN', role: 'ground', title: 'Flight surgeon · Houston' },
     ],
 };
 

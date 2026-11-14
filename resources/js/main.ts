@@ -9,7 +9,7 @@ import { maybeShowGuide } from './features/help';
 import { html, type Html } from './lib/html';
 import { registerServiceWorker } from './offline/register';
 import { actions, registerActions } from './router-actions';
-import { app, me, writePref, ws } from './state';
+import { app, homeFor, me, writePref, ws } from './state';
 import { routes } from './routes';
 import { bus } from './bus';
 import { initFx, mountFx, withTransition } from './fx';
@@ -34,8 +34,8 @@ export function navigate(href: string, replace = false): void {
 
 async function viewHtml(): Promise<Html> {
     let key = app.route.segments[0] ?? '';
-    const fallback = app.role === 'cmo' ? 'crew' : 'overview';
-    if (app.role === 'cmo' && key === 'overview') key = 'crew';
+    const fallback = homeFor().slice(1);
+    if (app.role !== 'astronaut' && key === 'overview') key = fallback;
     const r = routes[key] ?? routes[fallback];
     return r();
 }
@@ -153,6 +153,7 @@ async function tick(): Promise<void> {
     app.now = await repo.readNow(ws());
     await repo.syncReminders(ws(), WORKSPACES[ws()].astronautId, app.now);
     const changed = await repo.processQueue(ws(), { groundLink: app.groundLink, browserOnline: app.browserOnline, loseNextReceipt: app.loseNextReceipt }, () => (WORKSPACES[ws()].simulatedClock ? app.now : Date.now()), fetch.bind(window), () => render());
+    if (app.groundLink && app.browserOnline) await repo.deliverGroundNotes(ws(), app.now);
     if (changed) {
         app.loseNextReceipt = await repo.kvGet(ws(), 'loseNextReceipt', false);
     }
@@ -179,9 +180,16 @@ registerActions({
         await enterWorkspace('explore');
         navigate('/overview');
     },
+    /** entry screen: pick a mode (demo or real app) and a role in one tap */
+    'enter-as': async (el) => {
+        const role = el.dataset.role as Role;
+        await enterWorkspace(el.dataset.ws as WorkspaceId, role);
+        navigate(homeFor(role));
+    },
     'toggle-link': async () => {
         app.groundLink = !app.groundLink;
         await repo.kvSet(ws(), 'groundLink', app.groundLink);
+        if (app.groundLink) await repo.deliverGroundNotes(ws(), app.now);
         toast(app.groundLink ? 'Ground link restored (simulated). Queued reports will be sent.' : 'Ground link offline (simulated). Work continues on board.');
         await tick();
         await render();
@@ -189,9 +197,8 @@ registerActions({
     role: async (el) => {
         app.role = el.dataset.role as Role;
         writePref('quinta.role', app.role);
-        const home = app.role === 'cmo' ? '/crew' : '/overview';
-        navigate(home);
-        toast(app.role === 'cmo' ? 'Viewing as crew medical officer' : 'Viewing as astronaut');
+        navigate(homeFor());
+        toast(app.role === 'cmo' ? 'Viewing as crew medical officer, on board' : app.role === 'ground' ? 'Viewing as flight surgeon, in Houston' : 'Viewing as astronaut');
     },
     clock: async (el) => {
         const now = await repo.readNow('demo');
@@ -206,7 +213,7 @@ registerActions({
         app.groundLink = false;
         app.loseNextReceipt = false;
         toast(`Demo reset to Day ${day} 06:59 UTC. Explore app data untouched.`);
-        navigate(app.role === 'cmo' ? '/crew' : '/overview');
+        navigate(homeFor());
     },
     'lose-receipt': async (el) => {
         app.loseNextReceipt = (el as HTMLInputElement).checked;
