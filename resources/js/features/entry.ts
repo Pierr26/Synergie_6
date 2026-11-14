@@ -45,7 +45,7 @@ export async function renderEntry(): Promise<Html> {
           <img class="entry-logo" src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="160" height="44">
           <div class="entry-mode" role="radiogroup" aria-label="Which crew">
             <button type="button" role="radio" aria-checked="${m === 'demo'}" data-action="entry-mode" data-ws="demo">${icon('play', 'sm')}Guided demo</button>
-            <button type="button" role="radio" aria-checked="${m === 'explore'}" data-action="entry-mode" data-ws="explore">${icon('arrow', 'sm')}Real app</button>
+            <button type="button" role="radio" aria-checked="${m === 'explore'}" data-action="entry-mode" data-ws="explore">${icon('arrow', 'sm')}Free sandbox</button>
           </div>
         </header>
         <h1 tabindex="-1">Crew health, even when Earth is out of reach.</h1>
@@ -59,8 +59,9 @@ export async function renderEntry(): Promise<Html> {
             </button>`,
           )}
         </div>
-        ${app.ws ? html`<p class="entry-resume">Last used: <b>${app.ws === 'demo' ? 'Guided demo' : 'Real app'}</b>. Each keeps its own fictional records on this device.</p>` : ''}
-        <p class="entry-note">${icon('info')}No account. Works offline after the first visit. Simulated crew data · AI-generated images · NASA Space Apps Challenge 2026 prototype, not affiliated with NASA.</p>
+        ${app.ws ? html`<p class="entry-resume">Last used: <b>${app.ws === 'demo' ? 'Guided demo' : 'Free sandbox'}</b>. Each keeps its own fictional records on this device.</p>` : ''}
+        <p class="entry-signin">${icon('user', 'sm')}Have a crew account? <a href="/login">Sign in</a> to your assigned mission and protected records.</p>
+        <p class="entry-note">${icon('info')}Demo needs no account. Works offline after the first visit. Simulated crew data · AI-generated images · NASA Space Apps Challenge 2026 prototype, not affiliated with NASA.</p>
       </main>
     </div>`;
 }

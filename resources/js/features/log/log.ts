@@ -48,7 +48,7 @@ export async function renderLog(): Promise<Html> {
             tone: today.length ? 'done' : 'idle',
         },
         {
-            href: '/follow-up/symptom',
+            href: '/symptoms',
             img: 'symptom',
             title: 'Report a symptom',
             what: 'Something you can see or feel: a photo and a few words for your medical officer.',

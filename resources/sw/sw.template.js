@@ -38,7 +38,7 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
-    if (url.origin !== self.location.origin || isApi(url)) return;
+    if (url.origin !== self.location.origin || isApi(url) || /^\/(account|login|logout)(\/|$)/.test(url.pathname)) return;
 
     // App navigations (any internal view): network first with a short timeout, then the cached shell.
     if (request.mode === 'navigate') {

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * M05 / V05 · offline after preparation, served from the same origin as Laravel.
@@ -21,7 +21,7 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await expect(page.locator('#page-title')).toHaveText('Trends');
     await expect(page.locator('.mission')).toContainText('Device offline');
 
-    await page.getByRole('button', { name: 'Advance 1 minute' }).click();
+    await scenario(page, 'Advance 1 minute');
     await page.goto('/check-in');
     await page.getByRole('button', { name: 'Save check-in' }).click();
     await expect(page.locator('#saved-h')).toHaveText('Saved on this device');
@@ -37,7 +37,7 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await expect(page.locator('.queue-state')).toContainText('Queued');
     await page.reload();
     await expect(page.locator('.queue-state')).toContainText('Queued');
-    await page.screenshot({ path: 'docs/screenshots/offline-queued-1440.png', fullPage: true });
+    await page.screenshot({ path: 'docs/screenshots/role-redesign/offline-queued-1440.png', fullPage: true });
 
     // simulate a new deployment: drop the current shell cache, keep IndexedDB, go back online
     await context.setOffline(false);
@@ -52,3 +52,9 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await page.goto('/crew/moreau');
     await expect(page.locator('.alert-card')).toContainText('Reviewed offline');
 });
+
+async function scenario(page: Page, label: string) {
+    const tools = page.locator('details.demo-tools');
+    if (await tools.getAttribute('open') === null) await tools.locator('summary').click();
+    await page.getByRole('button', { name: label, exact: true }).click();
+}

@@ -29,6 +29,12 @@ registerActions({
         toast('Crew review requested. Your CMO was notified on board.');
         await bus.refresh();
     },
+    'close-request': async (el) => {
+        if (app.role !== 'cmo') return;
+        await repo.closeRequest(ws(), el.dataset.id!, app.now);
+        toast('Response reviewed. The request is closed.');
+        await bus.refresh();
+    },
     'answer-request': async (el) => {
         const f = el as HTMLFormElement;
         const text = String(new FormData(f).get('answer') ?? '').trim();
@@ -47,17 +53,18 @@ registerActions({
 export function requestCard(r: RequestRow, viewer: 'astronaut' | 'cmo', highlight: boolean): Html {
     const author = repo.memberStatic(ws(), r.authorId).alias;
     const tone = r.status === 'open' ? (r.kind === 'review-request' ? 'review' : 'info') : 'ok';
-    const statusText = r.status === 'open' ? (r.kind === 'review-request' ? 'Crew review pending' : 'Open') : 'Answered';
+    const statusText = r.status === 'closed' ? 'Reviewed' : r.status === 'open' ? (r.kind === 'review-request' ? 'Crew review pending' : 'Follow-up requested') : r.kind === 'follow-up' ? 'Response received' : 'Reviewed';
     const canAnswer = r.status === 'open' && ((viewer === 'astronaut' && r.kind === 'follow-up') || (viewer === 'cmo' && r.kind === 'review-request'));
-    const action = r.measurement ? `/measurements?type=${r.measurement}&request=${r.id}` : r.label.toLowerCase().includes('check-in') ? `/check-in?request=${r.id}` : null;
+    const action = r.measurement === 'sleep_main' || r.measurement === 'drowsiness' ? `/check-in?request=${r.id}#${r.measurement === 'sleep_main' ? 'q-sleep' : 'q-drowsy'}` : r.measurement ? `/measurements?type=${r.measurement}&request=${r.id}` : r.label.toLowerCase().includes('check-in') ? `/check-in?request=${r.id}` : null;
     return html`<article class="req ${highlight ? 'req-hl' : ''}" id="req-${r.id}">
       <header><span class="req-k">${icon(r.kind === 'review-request' ? 'review' : 'followup')}${r.kind === 'review-request' ? 'Review requested by' : 'Follow-up from'} ${author}</span>${badge(statusText, tone, r.status === 'open' ? 'clock' : 'ok')}</header>
       <h3>${r.label}</h3>
       <p>${r.reason}</p>
       <p class="fine mono">${utcStamp(Date.parse(r.createdAt))} · Day ${missionDay(Date.parse(r.createdAt), cfg().epoch)}${r.evidence.ids.length ? ` · ${r.evidence.ids.length} linked item${r.evidence.ids.length > 1 ? 's' : ''}` : ''}</p>
       ${r.response ? html`<div class="req-answer"><b>${repo.memberStatic(ws(), r.response.authorId).alias}</b> · <span class="mono">${utcStamp(Date.parse(r.response.at))}</span><p>${r.response.text}</p></div>` : ''}
+      ${viewer === 'cmo' && r.kind === 'follow-up' && r.status === 'answered' ? html`<button type="button" class="btn btn-ghost" data-action="close-request" data-id="${r.id}">Mark response reviewed</button>` : ''}
       ${canAnswer ? html`
-        ${viewer === 'astronaut' && action ? html`<a class="btn btn-primary" href="${action}" data-link>${r.measurement ? `Measure ${VARIABLE_META[r.measurement as 'bp'].label.toLowerCase()}` : 'Open check-in'} ${icon('arrow')}</a>` : ''}
+        ${viewer === 'astronaut' && action ? html`<a class="btn btn-primary" href="${action}" data-link>${r.measurement ? `Measure ${VARIABLE_META[r.measurement as 'bp'].label.toLowerCase()}` : 'Open requested field'} ${icon('arrow')}</a>` : ''}
         <form class="answer" data-action="answer-request" data-id="${r.id}">
           <label for="ans-${r.id}">${viewer === 'cmo' ? 'Reply to the crew member' : 'Answer'}</label>
           <textarea id="ans-${r.id}" name="answer" rows="2" maxlength="400"></textarea>
@@ -101,7 +108,7 @@ export async function renderFollowUp(): Promise<Html> {
             html`<li><span class="mono">${utcStamp(Date.parse(a.createdAt))}</span><span>${badge('Demo rule', 'review', 'review')} Sleep trend needs review · Days ${a.startDay}–${a.endDay}</span></li>`,
             ...a.reviews.map((rv) => html`<li><span class="mono">${utcStamp(Date.parse(rv.at))}</span><span>${badge('Reviewed', 'ok', 'ok')} ${repo.memberStatic(ws(), rv.byId).alias}: “${rv.note}”</span></li>`),
         ])}
-        ${done.map((r) => html`<li><span class="mono">${utcStamp(Date.parse(r.response!.at))}</span><span>${badge('Answered', 'ok', 'ok')} ${r.label} — “${r.response!.text}”</span></li>`)}
+        ${done.map((r) => html`<li><span class="mono">${utcStamp(Date.parse(r.response?.at ?? r.createdAt))}</span><span>${badge(r.status === 'closed' || r.kind === 'review-request' ? 'Reviewed' : 'Response received', 'ok', 'ok')} ${r.label} — “${r.response?.text ?? ''}”</span></li>`)}
         ${reports.map((r) => html`<li><span class="mono">${utcStamp(Date.parse(r.createdAt))}</span><span>${queueBadge(r.queue.state)} Individual report Day ${r.fromDay}–${r.toDay} by ${repo.memberStatic(ws(), r.authorId).alias}${r.queue.receipt ? ` · ${r.queue.receipt.receiver} ${hhmm(Date.parse(r.queue.receipt.receivedAt))} UTC` : r.queue.receiver ? ` · to ${RECEIVER_LABEL[r.queue.receiver]}` : ''}</span></li>`)}
         ${!alerts.length && !done.length && !reports.length ? html`<li class="muted">Nothing yet.</li>` : ''}
       </ol>

@@ -405,6 +405,16 @@ export async function answerRequest(ws: WorkspaceId, requestId: string, authorId
     await db.transaction('rw', [db.requests, db.notifications], () => answerRequestInTx(ws, requestId, authorId, text, observationIds, now));
 }
 
+export async function closeRequest(ws: WorkspaceId, requestId: string, now: number): Promise<void> {
+    await db.transaction('rw', [db.requests, db.notifications], async () => {
+        const row = await db.requests.get(requestId);
+        if (!row || row.ws !== ws || row.kind !== 'follow-up' || row.status !== 'answered') return;
+        await db.requests.update(requestId, { status: 'closed' });
+        const notifications = await db.notifications.where('ws').equals(ws).toArray();
+        for (const n of notifications.filter(n => n.link.includes(requestId))) await db.notifications.update(n.id, { active: false, readAt: n.readAt ?? new Date(now).toISOString() });
+    });
+}
+
 export async function requestsFor(ws: WorkspaceId, crewId?: string): Promise<RequestRow[]> {
     const rows = crewId ? await db.requests.where('[ws+crewId]').equals([ws, crewId]).toArray() : await db.requests.where('ws').equals(ws).toArray();
     return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));

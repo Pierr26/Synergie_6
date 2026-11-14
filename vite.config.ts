@@ -23,6 +23,7 @@ function quintaServiceWorker(): Plugin {
                 '/assets/brand/quinta-icone-app-180.png',
                 '/assets/illustrations/body-front.webp',
                 '/assets/illustrations/lunar-window.webp',
+                '/assets/illustrations/simulated-skin-mark.webp',
             ];
             // Read what was really written (Vite manifest), skipping dynamic-only chunks (3D viewer).
             type Chunk = { file: string; css?: string[]; assets?: string[]; isDynamicEntry?: boolean };
