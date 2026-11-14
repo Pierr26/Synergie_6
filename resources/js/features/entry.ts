@@ -13,19 +13,20 @@ export async function renderEntry(): Promise<Html> {
       <main class="entry-panel" id="main" tabindex="-1">
         <img class="entry-logo" src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="200" height="55">
         <h1 tabindex="-1">Crew health, even when the ground link drops.</h1>
-        <p class="entry-lead">The astronaut logs sleep and drowsiness, the crew medical officer reviews the signal on board, and a crew member's report waits in the queue until the ground acknowledges it.</p>
+        <p class="entry-lead">A daily rhythm for the astronaut. A clear review queue for the medical officer. One connected story, even when the ground link drops.</p>
         <div class="entry-choices">
           <button type="button" class="entry-choice primary" data-action="enter-demo">
             <span class="entry-choice-h">${icon('play')}Start demo</span>
             <span>Guided scenario on mission Day 142, 06:59 UTC. Controlled clock, demo sleep rule, reset any time.</span>
           </button>
-          <button type="button" class="entry-choice" data-action="enter-explore">
-            <span class="entry-choice-h">${icon('arrow')}Explore app</span>
-            <span>An independent fictional crew on the real clock. No mission rule configured. Your entries stay here.</span>
-          </button>
+          <a class="entry-choice" href="/login">
+            <span class="entry-choice-h">${icon('user')}Sign in</span>
+            <span>Your assigned mission, your account role and protected crew records.</span>
+          </a>
         </div>
+        <p class="entry-resume"><button type="button" class="btn btn-quiet" data-action="enter-explore">Explore app</button> · separate fictional sandbox on the real clock</p>
         ${resume}
-        <p class="entry-note">${icon('info')}No account. Works offline after the first visit. Simulated crew data — a Synergy 5 prototype for the NASA Space Apps Challenge 2026, not affiliated with NASA.</p>
+        <p class="entry-note">${icon('info')}Demo needs no account. Switch astronaut / CMO in the same browser. Works offline after the first visit. Simulated crew data — a Synergy 5 prototype for the NASA Space Apps Challenge 2026, not affiliated with NASA.</p>
       </main>
     </div>`;
 }

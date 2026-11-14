@@ -11,7 +11,7 @@ let viewer: import('./body3d').Viewer | null = null;
 let viewerState: 'off' | 'loading' | 'on' | 'failed' = 'off';
 let failReason = '';
 /** 3D opens by default where WebGL exists; "Back to 2D" turns it off and is remembered. */
-const AUTO_3D = true;
+const AUTO_3D = false;
 let viewAngle = 0.3;
 let shownRegion: string | null = null;
 const layerOn: Record<import('./body3d').LayerId, boolean> = { skin: true, vessels: true, bones: false, digestive: false };

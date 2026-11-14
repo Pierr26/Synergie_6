@@ -2,6 +2,7 @@ import { bus } from '../../bus';
 import { icon } from '../../components/icons';
 import { badge, demoRuleTag, obsValue, pageHead, qualityBadge, queueBadge, simTag, sourceLabel, toast } from '../../components/ui';
 import * as repo from '../../data/repo';
+import { reviewItems } from '../../data/experience';
 import { compareToInterval, hoursBetween, LAB_META, normalizeLab, type Analyte, type LabStatus } from '../../domain/labs';
 import { VARIABLE_META } from '../../domain/measurements';
 import { SLEEP_RULE, sleepZone } from '../../domain/sleep';
@@ -14,6 +15,8 @@ import { requestCard } from '../follow-up/followup';
 import { pendingSymptomReports, symptomSection } from '../symptoms/symptoms';
 
 const FOLLOW_UPS: { label: string; measurement: string | null }[] = [
+    { label: 'Clarify your sleep duration', measurement: 'sleep_main' },
+    { label: 'Clarify your drowsiness', measurement: 'drowsiness' },
     { label: 'New sleep check-in tomorrow morning', measurement: null },
     { label: 'Measure blood pressure at rest', measurement: 'bp' },
     { label: 'Measure SpO₂ at rest', measurement: 'spo2' },
@@ -102,7 +105,7 @@ async function memberState(crewId: string) {
     const symptoms = await pendingSymptomReports(crewId);
     const outOfRange = labs.filter((l) => !l.supersededBy && ['Below', 'Above'].includes(compareToInterval(l)));
     let state: Html;
-    if (pendingAlert) state = html`${badge('Sleep trend needs review', 'review', 'review')}`;
+    if (pendingAlert) state = html`${badge('Crew review pending', 'review', 'review')}`;
     else if (reviewReq) state = badge('Crew review requested', 'review', 'review');
     else if (symptoms) state = badge('Symptom report to review', 'review', 'camera');
     else if (ci?.status === 'submitted') state = badge('Check-in today', 'ok', 'ok');
@@ -118,6 +121,7 @@ export async function renderCrew(): Promise<Html> {
     const day = missionDay(app.now, c.epoch);
     const astronauts = (await repo.members(ws())).filter((m) => m.role === 'astronaut');
     const notes = (await repo.notificationsFor(ws(), me())).filter((n) => n.active && ['sleep-review', 'review-requested', 'follow-up-completed', 'report-retry', 'symptom-submitted', 'symptom-reply'].includes(n.type));
+    const queue = await reviewItems(ws());
     const rows = await Promise.all(
         astronauts.map(async (m) => {
             const all = await repo.currentObservations(ws(), m.id);
@@ -129,7 +133,12 @@ export async function renderCrew(): Promise<Html> {
     const week = Array.from({ length: 7 }, (_, i) => day - 6 + i);
     const done = astronauts.length - rows.filter((r) => r.s.ci?.status !== 'submitted').length;
     return html`
-    ${pageHead('Crew console', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${simTag()}${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
+    ${pageHead('Review queue', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${simTag()}${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
+    <section class="card review-queue" aria-labelledby="queue-h">
+      <div class="card-h"><div><span class="mission-kicker">ONBOARD CARE</span><h2 id="queue-h">Review queue</h2></div>${badge(`${queue.filter(i => !i.waitingForCrew).length} ready for review`, 'info', 'review')}</div>
+      <p class="hint">Open a case to see observations, the sleep trend and any photo. Follow-up responses return to the same file.</p>
+      ${queue.length ? html`<div class="review-list">${queue.map(i => html`<a class="review-row" href="${i.href}" data-link><span class="av">${repo.memberStatic(ws(),i.crewId).initials}</span><span><b>${repo.memberStatic(ws(),i.crewId).alias}</b><span>${i.reason}</span><small class="mono">${utcStamp(Date.parse(i.at))} · Day ${missionDay(Date.parse(i.at),c.epoch)}</small></span>${badge(i.status, i.waitingForCrew ? 'muted' : 'review', i.waitingForCrew ? 'clock' : 'review')}${icon('arrow','sm')}</a>`)}</div>` : html`<div class="empty-q">${icon('ok')}<p>No review waiting. New observations and crew replies appear here.</p></div>`}
+    </section>
     <div class="gd">
       <div class="board-col">
         <section class="card board" aria-labelledby="crew-h">
@@ -194,13 +203,13 @@ async function renderMember(crewId: string): Promise<Html> {
     const diary = new Map(obs.filter((o) => o.variable === 'sleep_main' && o.method === SLEEP_RULE.method).map((o) => [o.missionDay, o]));
 
     return html`
-    <p class="crumbs"><a href="/crew" data-link>${icon('back')}Crew console</a></p>
+    <p class="crumbs"><a href="/crew" data-link>${icon('back')}Review queue</a></p>
     ${pageHead(m.alias, html`${m.title} · member file · Day ${day}`, html`<div class="head-tags">${simTag()}<a class="btn btn-ghost btn-small" href="/trends?member=${crewId}" data-link>${icon('trends')}Trends</a><a class="btn btn-ghost btn-small" href="/reports?member=${crewId}" data-link>${icon('report')}Report</a></div>`)}
 
     ${alerts.map((a) => {
         const ev = obs.filter((o) => a.evidenceIds.includes(o.id)).sort((x, y) => x.missionDay - y.missionDay);
         return html`<section class="card alert-card ${a.key === hlAlert ? 'req-hl' : ''} ${a.status === 'reviewed' ? 'is-reviewed' : ''}" aria-labelledby="al-${a.startDay}">
-          <p class="prio-k">${demoRuleTag()} ${badge(a.status === 'reviewed' ? 'Reviewed' : 'Needs review', a.status === 'reviewed' ? 'ok' : 'review', a.status === 'reviewed' ? 'ok' : 'review')} <span class="mono">${utcStamp(Date.parse(a.createdAt))}</span></p>
+          <p class="prio-k">${demoRuleTag()} ${badge(a.status === 'reviewed' ? 'Reviewed' : 'Crew review pending', a.status === 'reviewed' ? 'ok' : 'review', a.status === 'reviewed' ? 'ok' : 'review')} <span class="mono">${utcStamp(Date.parse(a.createdAt))}</span></p>
           <h2 id="al-${a.startDay}">Sleep trend needs review</h2>
           <p>${SLEEP_RULE.label}: ${SLEEP_RULE.description} Days ${a.startDay}–${a.endDay}.</p>
           <ol class="evidence">${ev.map((o) => html`<li><span>Day ${o.missionDay}</span><b class="mono">${formatMinutes(o.value)}</b><small>${o.method} · ${sourceLabel(o)} · ${hhmm(Date.parse(o.measuredAt))} UTC</small></li>`)}</ol>

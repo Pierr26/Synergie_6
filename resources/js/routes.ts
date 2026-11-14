@@ -10,6 +10,7 @@ import { renderOverview } from './features/overview/overview';
 import { renderReports } from './features/reports/reports';
 import { renderSettings } from './features/settings/settings';
 import { renderTrends } from './features/trends/trends';
+import { renderSymptomForm } from './features/symptoms/symptoms';
 
 /** All views share one cached document; the router picks the renderer from the first path segment. */
 export const routes: Record<string, () => Promise<Html>> = {
@@ -19,6 +20,7 @@ export const routes: Record<string, () => Promise<Html>> = {
     trends: renderTrends,
     body: renderBody,
     'follow-up': renderFollowUp,
+    symptoms: renderSymptomForm,
     crew: renderCrew,
     notifications: renderNotifications,
     reports: renderReports,

@@ -42,6 +42,7 @@ async function viewHtml(): Promise<Html> {
 
 /** Re-renders the shell and the current view. Keeps focus and scroll on refresh, focuses the title on navigation. */
 export async function render(isNavigation = false): Promise<void> {
+    if (!root) return;
     if (rendering) {
         pending = true;
         return;
@@ -317,7 +318,9 @@ async function boot(): Promise<void> {
     }, 1000);
 }
 
-void boot().catch((err) => {
+if (root) void boot().catch((err) => {
     console.error(err);
     root.innerHTML = html`<div class="boot"><h1>QUINTA could not start</h1><p>Local storage may be blocked in this browser window (private mode or site data disabled). ${String(err)}</p></div>`.value;
 });
+
+if (!root && document.querySelector('.account-app')) void import('./features/account-drafts').then(m => m.mountAccountDrafts());

@@ -14,7 +14,6 @@ let form: CheckinForm = { ...repo.EMPTY_FORM };
 let formKey = '';
 let editing = false;
 let errors: Record<string, string> = {};
-let saveTimer: number | undefined;
 
 function readForm(root: HTMLFormElement): CheckinForm {
     const fd = new FormData(root);
@@ -88,21 +87,20 @@ registerActions({
     },
     'mount:checkin': (el) => {
         const f = el as HTMLFormElement;
+        const owner = me(), workspace = ws();
         const persist = () =>
-            void repo.saveDraft(ws(), me(), form, app.now).then(() => {
+            void repo.saveDraft(workspace, owner, { ...form }, app.now).then(() => {
                 const s = document.getElementById('draft-status');
                 if (s) s.textContent = `Draft saved on this device · ${hhmm(app.now)} UTC`;
             });
-        // choices (radios, checkboxes, selects, blurred fields) are saved at once; typing is debounced
+        // Every change is saved immediately, so a quick reload keeps the latest draft.
         f.addEventListener('change', () => {
             form = readForm(f);
-            window.clearTimeout(saveTimer);
             persist();
         });
         f.addEventListener('input', () => {
             form = readForm(f);
-            window.clearTimeout(saveTimer);
-            saveTimer = window.setTimeout(persist, 600);
+            persist();
             const zero = document.getElementById('zero-row');
             if (zero) zero.hidden = !(form.sleepHours.trim() === '0' && (form.sleepMinutes.trim() === '' || form.sleepMinutes.trim() === '0')) && !form.sleepConfirmZero;
         });
@@ -142,7 +140,8 @@ export async function renderCheckin(): Promise<Html> {
 
     const head = pageHead('Daily check-in', html`Day ${day} · ${task ? (task.ev.state === 'completed' ? 'Completed' : task.ev.state === 'snoozed' ? `Snoozed until ${hhmm(task.task.snoozedUntil!)} UTC` : `Due ${hhmm(task.ev.effectiveDue)} UTC`) : ''}`, simTag());
 
-    if (record?.status === 'submitted' && !editing) {
+    const request = reqId ? (await repo.requestsFor(ws(), crewId)).find(r => r.id === reqId && r.status === 'open') : null;
+    if (record?.status === 'submitted' && !editing && !request) {
         const obs = (await repo.currentObservations(ws(), crewId)).filter((o) => record.observationIds.includes(o.id));
         const alert = (await repo.alertsFor(ws(), crewId)).find((a) => a.status === 'needs-review' && a.endDay >= day - 1);
         const evidence = alert ? (await repo.currentObservations(ws(), crewId)).filter((o) => alert.evidenceIds.includes(o.id)).sort((a, b) => a.missionDay - b.missionDay) : [];
@@ -163,7 +162,7 @@ export async function renderCheckin(): Promise<Html> {
               ${record.form.hr ? html`<dt>Resting heart rate</dt><dd class="mono">${record.form.hr} bpm${record.form.hrRest !== 'yes' ? ' · rest not confirmed' : ''}</dd>` : ''}
               <dt>Method</dt><dd>Sleep diary · QUINTA drowsiness scale · entered on this device</dd>
             </dl>
-            <div class="row-actions"><a href="/overview" data-link class="btn btn-primary">Back to Overview</a><button type="button" class="btn btn-quiet" data-action="checkin-edit">Correct today’s check-in</button></div>
+            <div class="row-actions"><a href="/overview" data-link class="btn btn-primary">Back to Today</a><button type="button" class="btn btn-quiet" data-action="checkin-edit">Correct today’s check-in</button></div>
           </section>
           ${alert ? html`<section class="card priority tone-review" aria-labelledby="alert-h">
               <p class="prio-k">${demoRuleTag()} ${badge('Crew review pending', 'review', 'clock')}</p>
@@ -179,7 +178,7 @@ export async function renderCheckin(): Promise<Html> {
     const zeroVisible = form.sleepConfirmZero || (form.sleepHours.trim() === '0' && ['', '0'].includes(form.sleepMinutes.trim()));
     const optionalOpen = !!(form.mood || form.symptoms || form.hr || errors.hr);
     return html`${head}
-    ${reqId ? html`<p class="notice">${icon('followup')}This check-in answers a follow-up request from your crew medical officer.</p>` : ''}
+    ${request ? html`<section class="notice"><b>Follow-up: ${request.label}</b><p>${request.reason}</p><a href="/follow-up?request=${request.id}#req-${request.id}" data-link>View the request</a></section>` : ''}
     <div class="ci-grid">
     <nav class="card stepper" aria-label="Check-in steps">
       ${[
@@ -239,7 +238,7 @@ export async function renderCheckin(): Promise<Html> {
           </div>
           <label for="symptomsComment" class="sub">Short comment (optional)</label>
           <input id="symptomsComment" name="symptomsComment" maxlength="200" value="${form.symptomsComment}">
-          <p class="hint sym-link">Something visible to show your CMO? <a href="/follow-up/symptom" data-link>Report a symptom with a photo</a></p>
+          <p class="hint sym-link">Something visible to show your CMO? <a href="/symptoms" data-link>Report a symptom with a photo</a></p>
         </fieldset>
         <fieldset class="q ${errors.hr ? 'has-error' : ''}">
           <legend>Resting heart rate</legend>
