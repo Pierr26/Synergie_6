@@ -242,12 +242,13 @@ function commands(): Command[] {
     const nav: Command[] =
         app.role === 'cmo'
             ? [
-                  { label: 'Crew console', hint: 'Screen', run: go('/crew') },
+                  { label: 'Review queue', hint: 'Screen', run: go('/crew') },
                   { label: 'Reports', hint: 'Screen', run: go('/reports') },
               ]
             : [
-                  { label: 'Overview', hint: 'Screen', run: go('/overview') },
+                  { label: 'Today', hint: 'Screen', run: go('/overview') },
                   { label: 'Daily check-in', hint: 'Screen', run: go('/check-in') },
+                  { label: 'Report a Symptom', hint: 'Screen', run: go('/symptoms') },
                   { label: 'Follow-up', hint: 'Screen', run: go('/follow-up') },
                   { label: 'Spot measurements', hint: 'Screen', run: go('/measurements') },
                   { label: 'Add blood pressure', hint: 'Measure', run: go('/measurements?type=bp') },

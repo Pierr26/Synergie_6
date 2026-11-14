@@ -20,6 +20,7 @@ const ICON: Record<NotificationRow['type'], string> = {
     'symptom-reply': 'followup',
     'symptom-more-info': 'followup',
     'symptom-feedback': 'ok',
+    'ground-note': 'link',
 };
 
 registerActions({

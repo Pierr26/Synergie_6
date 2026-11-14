@@ -1,4 +1,30 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+/** Entry screen: guided demo is the default mode; pick a role card. */
+async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
+    await page.goto('/');
+    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
+    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+}
+
+/** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */
+async function step(page: Page, n: number) {
+    await page.locator('.stepper .step').nth(n).click();
+}
+
+/** Save the check-in as a user would: "Save now" on an early step, else the last step's "Save check-in". */
+async function saveCheckin(page: Page) {
+    const now = page.getByRole('button', { name: 'Save now', exact: true });
+    const save = page.getByRole('button', { name: 'Save check-in', exact: true });
+    // a background refresh can swallow a click: retry until one of the save buttons is reached
+    await expect(async () => {
+        if (await save.isVisible()) return save.click({ timeout: 2000 });
+        if (await now.isVisible()) return now.click({ timeout: 2000 });
+        await step(page, 3);
+        throw new Error('save button not reached yet');
+    }).toPass({ timeout: 20000 });
+}
+
 
 /**
  * M05 / V05 · offline after preparation, served from the same origin as Laravel.
@@ -11,9 +37,8 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
         localStorage.setItem('quinta.guide.astronaut', 'done');
         localStorage.setItem('quinta.guide.cmo', 'done');
     });
-    await page.goto('/');
-    await page.getByRole('button', { name: /Start demo/ }).click();
-    await expect(page.getByText('Ready offline')).toBeVisible({ timeout: 30000 });
+    await enterAs(page, 'astronaut');
+    await expect(page.locator('.st-menu summary')).toContainText('All set', { timeout: 30000 });
     await page.reload(); // page now controlled by the service worker
 
     await context.setOffline(true);
@@ -21,12 +46,12 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await expect(page.locator('#page-title')).toHaveText('Trends');
     await expect(page.locator('.mission')).toContainText('Device offline');
 
-    await page.getByRole('button', { name: 'Advance 1 minute' }).click();
+    await scenario(page, 'Advance 1 minute');
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toHaveText('Saved on this device');
 
-    await page.getByRole('group', { name: 'Role on board' }).getByRole('button', { name: /CMO/ }).click();
+    await page.getByRole('group', { name: 'Role' }).getByRole('button', { name: /CMO/ }).click();
     await page.goto('/crew/moreau');
     await page.getByLabel('Your review').fill('Reviewed offline');
     await page.getByRole('button', { name: 'Record review' }).click();
@@ -37,7 +62,7 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await expect(page.locator('.queue-state')).toContainText('Queued');
     await page.reload();
     await expect(page.locator('.queue-state')).toContainText('Queued');
-    await page.screenshot({ path: 'docs/screenshots/offline-queued-1440.png', fullPage: true });
+    await page.screenshot({ path: 'docs/screenshots/role-redesign/offline-queued-1440.png', fullPage: true });
 
     // simulate a new deployment: drop the current shell cache, keep IndexedDB, go back online
     await context.setOffline(false);
@@ -52,3 +77,9 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
     await page.goto('/crew/moreau');
     await expect(page.locator('.alert-card')).toContainText('Reviewed offline');
 });
+
+async function scenario(page: Page, label: string) {
+    const tools = page.locator('details.demo-tools');
+    if (await tools.getAttribute('open') === null) await tools.locator('summary').click();
+    await page.getByRole('button', { name: label, exact: true }).click();
+}

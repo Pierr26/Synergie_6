@@ -1,9 +1,35 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** Entry screen: guided demo is the default mode; pick a role card. */
+async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
+    await page.goto('/');
+    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
+    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+}
+
+/** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */
+async function step(page: Page, n: number) {
+    await page.locator('.stepper .step').nth(n).click();
+}
+
+/** Save the check-in as a user would: "Save now" on an early step, else the last step's "Save check-in". */
+async function saveCheckin(page: Page) {
+    const now = page.getByRole('button', { name: 'Save now', exact: true });
+    const save = page.getByRole('button', { name: 'Save check-in', exact: true });
+    // a background refresh can swallow a click: retry until one of the save buttons is reached
+    await expect(async () => {
+        if (await save.isVisible()) return save.click({ timeout: 2000 });
+        if (await now.isVisible()) return now.click({ timeout: 2000 });
+        await step(page, 3);
+        throw new Error('save button not reached yet');
+    }).toPass({ timeout: 20000 });
+}
+
+
 /** "Report a symptom": capture on this device (also offline), onboard review, feedback in Follow-up. */
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFklEQVR4nGP8z4AdMOEQH5UYrBIAVbwBD1vk9kUAAAAASUVORK5CYII=', 'base64');
 const photo = (name = 'arm.png') => ({ name, mimeType: 'image/png', buffer: PNG });
-const shot = (page: Page, name: string) => page.screenshot({ path: `docs/screenshots/${test.info().project.name}/${name}.png`, fullPage: true });
+const shot = (page: Page, name: string) => page.screenshot({ path: `docs/screenshots/role-redesign/${test.info().project.name}/${name}.png`, fullPage: true });
 
 test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => {
@@ -15,23 +41,22 @@ test.beforeEach(async ({ context }) => {
 });
 
 async function startDemo(page: Page) {
-    await page.goto('/');
-    await page.getByRole('button', { name: /Start demo/ }).click();
-    await expect(page.locator('#page-title')).toHaveText('Overview');
+    await enterAs(page, 'astronaut');
+    await expect(page.locator('#page-title')).toHaveText('Today');
 }
 
-const role = (page: Page, r: 'Astronaut' | 'CMO') => page.getByRole('group', { name: 'Role on board' }).getByRole('button', { name: new RegExp(r) }).click();
+const role = (page: Page, r: 'Astronaut' | 'CMO') => page.getByRole('group', { name: 'Role' }).getByRole('button', { name: new RegExp(r) }).click();
 const loaded = (page: Page, selector: string) => expect.poll(() => page.locator(selector).first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 
 test('Symptom report · photo draft survives an offline reload, CMO reviews it in the right file, feedback reaches Follow-up', async ({ page, context }) => {
     test.skip(test.info().project.name !== 'desktop-1440', 'offline run once');
     await startDemo(page);
-    await expect(page.getByText('Ready offline')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('.st-menu summary')).toContainText('All set', { timeout: 30000 });
     await page.reload(); // page now controlled by the service worker
 
     // entry points: Daily check-in and Follow-up
     await page.goto('/check-in');
-    await page.locator('details.optional summary').click();
+    await step(page, 2);
     await page.getByRole('link', { name: 'Report a symptom with a photo' }).click();
     await expect(page.locator('#page-title')).toHaveText('Report a symptom');
 
@@ -56,15 +81,15 @@ test('Symptom report · photo draft survives an offline reload, CMO reviews it i
 
     await expect(page.locator('#page-title')).toHaveText('Follow-up');
     const mine = page.locator('#symptoms .sym').first();
-    await expect(mine).toContainText('Submitted for onboard review');
+    await expect(mine).toContainText('Crew review pending');
     await expect(mine).toContainText('Left arm');
     await loaded(page, '#symptoms .sym-photo img');
     await shot(page, '15-symptom-astronaut-submitted');
 
     // CMO: notification, right member file, photo and context
     await role(page, 'CMO');
-    await expect(page.locator('.watch')).toContainText('Symptom report to review');
-    await page.locator('.watch').getByRole('link', { name: 'Open' }).first().click();
+    await expect(page.locator('.review-queue')).toContainText('Left arm');
+    await page.locator('.review-queue .review-row').filter({ hasText: 'Left arm' }).first().click();
     await expect(page.locator('#page-title')).toHaveText('Cdr K. Moreau');
     const card = page.locator('#symptoms .sym').first();
     await expect(card).toContainText('Red patch on the forearm');
@@ -144,7 +169,7 @@ test('Symptom report · description only, replace and remove the photo, invalid 
     await page.getByRole('button', { name: 'Submit for onboard review' }).click();
     await expect(page.locator('#page-title')).toHaveText('Follow-up');
     const mine = page.locator('#symptoms .sym').first();
-    await expect(mine).toContainText('Submitted for onboard review');
+    await expect(mine).toContainText('Crew review pending');
     await expect(mine).toContainText('No photo · description only');
 
     await role(page, 'CMO');

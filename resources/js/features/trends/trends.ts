@@ -12,6 +12,18 @@ const METRICS: Variable[] = ['sleep_main', 'drowsiness', 'mood', 'resting_hr', '
 const DAILY: Variable[] = ['sleep_main', 'drowsiness', 'mood', 'resting_hr'];
 const SHAPES = ['circle', 'square', 'triangle', 'diamond'] as const;
 
+/** One sentence in plain words for someone without medical training. */
+const PLAIN: Record<string, string> = {
+    sleep_main: 'Time actually asleep in your main sleep. Several short nights in a row lower alertness, which matters for operations and spacewalks.',
+    drowsiness: 'How sleepy you feel when you log it, from 1 (wide awake) to 9 (fighting sleep). 7 or more means clearly sleepy.',
+    mood: 'How you feel overall, from 1 (very low) to 5 (very good). Long missions in confinement can wear mood down; a trend matters more than one day.',
+    resting_hr: 'Heartbeats per minute after 5 minutes at rest. In microgravity, fluids shift and the heart adapts; a steady rise can mean fatigue or illness.',
+    bp: 'Blood pressure: the top number is when the heart beats, the bottom one when it rests between beats.',
+    spo2: 'Oxygen level in your blood. Usually 95 % or more; lower values can come from cabin air or a measurement problem.',
+    temperature: 'Body temperature. It depends on where it is taken (mouth, ear, skin), so each site is its own series.',
+    glucose: 'Sugar in your blood. It depends on meals and on the sample, so each context is its own series.',
+};
+
 interface Series {
     key: string;
     label: string;
@@ -165,6 +177,25 @@ export async function renderTrends(): Promise<Html> {
         return `/trends?${u.toString()}`;
     };
 
+    const vals = (primary?.points ?? []).map((p) => p.value as number).filter((v) => Number.isFinite(v));
+    const avg = vals.length ? vals.reduce((x, y) => x + y, 0) / vals.length : null;
+    const isMin = metric === 'sleep_main';
+    const avgText = avg === null ? '—' : isMin ? formatMinutes(Math.round(avg)) : `${Math.round(avg * 10) / 10}`;
+    const gap = ref && latest?.value != null ? latest.value - ref.median : null;
+    const gapText = gap === null ? '—' : `${gap < 0 ? '−' : '+'}${formatMinutes(Math.abs(gap))}`;
+    const gapTone = gap !== null && gap <= -60 ? 'wt' : '';
+    // consecutive short nights ending with the latest diary night
+    const sorted = [...(primary?.points ?? [])].sort((x, y) => y.missionDay - x.missionDay);
+    let streak = 0;
+    for (const o of sorted) if ((o.value ?? 999) < SLEEP_RULE.thresholdMin) streak++; else break;
+    const ord = ['', 'First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh'];
+    const verdict = !latest
+        ? 'No reading in this period.'
+        : isMin && streak >= 2
+          ? `${ord[streak] ?? `${streak}th`} night in a row under 6 h${ref && avg !== null ? `: about ${formatMinutes(Math.max(0, Math.round(ref.median - avg)))} less than your usual each night.` : '.'}`
+          : isMin && gap !== null
+            ? gap < -30 ? `Last night was ${formatMinutes(-gap)} shorter than your usual.` : 'Your sleep is close to your usual.'
+            : `${VARIABLE_META[metric].label}: ${formatValue(latest)} on Day ${latest.missionDay}${missingDays.length ? `, ${missingDays.length} day${missingDays.length > 1 ? 's' : ''} without a reading` : ''}.`;
     return html`
     ${pageHead('Trends', html`${memberAlias} · Day ${fromDay}–${today} · values, methods and gaps`, html`<div class="head-tags">${simTag()}</div>`)}
     <div class="trend-controls">
@@ -172,24 +203,29 @@ export async function renderTrends(): Promise<Html> {
       <nav class="chips-nav metric-tabs" aria-label="Indicator">${METRICS.map((m) => html`<a href="${q({ metric: m })}" data-link class="${m === metric ? 'active' : ''}" ${m === metric ? html`aria-current="true"` : ''}>${VARIABLE_META[m].short}</a>`)}</nav>
       <div class="seg" role="group" aria-label="Period">${[7, 14, 30].map((p) => html`<a href="${q({ period: p })}" data-link aria-current="${p === period}" class="${p === period ? 'active' : ''}">${p} days</a>`)}</div>
     </div>
-    <section class="card" aria-labelledby="trend-h">
-      <div class="card-h"><h2 id="trend-h">${VARIABLE_META[metric].label}</h2>${metric === 'sleep_main' && c.rules.length ? demoRuleTag() : metric === 'sleep_main' ? badge('No mission rule configured', 'muted', 'info') : ''}</div>
-      <div class="insight">${latest
-          ? html`<p class="ins-v"><b class="mono">${formatValue(latest)}</b><span>latest ${latest.method} reading · Day ${latest.missionDay}, ${hhmm(Date.parse(latest.measuredAt))} UTC</span></p>
-        <p class="ins-t">${ref && latest.value !== null ? html`${latest.value < ref.median ? html`<b>${formatMinutes(ref.median - latest.value)} below</b>` : html`<b>${formatMinutes(latest.value - ref.median)} above</b>`} your personal reference of ${formatMinutes(ref.median)} (${ref.nights} diary nights).` : ''} ${missingDays.length ? html`<b>${missingDays.length} day${missingDays.length > 1 ? 's' : ''} without a reading</b> (${missingDays.map((d) => `D${d}`).join(', ')}).` : ''}</p>`
-          : html`<p class="ins-t">No reading in this period.</p>`}</div>
+    <section class="card trend-card" aria-labelledby="trend-h">
+      <div class="card-h"><h2 id="trend-h" class="sr-only">${VARIABLE_META[metric].label}</h2>${metric === 'sleep_main' && c.rules.length ? demoRuleTag() : metric === 'sleep_main' ? badge('No mission rule configured', 'muted', 'info') : ''}</div>
+      <p class="verdict-h">${verdict}</p>
+      <details class="why"><summary>What does this mean?</summary><p>${PLAIN[metric] ?? ''}</p></details>
       ${chart(metric, series, fromDay, today, refLines, missingDays)}
-      ${series.length ? html`<ul class="legend">${series.map((s, i) => html`<li><span class="lg lg-${SHAPES[i % 4]} s${(i % 4) + 1}" aria-hidden="true"></span>${s.label}${s.primary && series.length > 1 ? ' (main series)' : ''} · ${s.points.length} reading${s.points.length > 1 ? 's' : ''}</li>`)}${refLines.map((r) => html`<li><span class="lg lg-line ${r.cls}" aria-hidden="true"></span>${r.label}</li>`)}<li><span class="lg lg-hollow" aria-hidden="true"></span>Hollow marker = check measurement</li></ul>` : ''}
-      <div class="stats">
-        <div class="stat"><span>Readings shown</span><b>${current.length}</b></div>
-        ${ref ? html`<div class="stat"><span>Personal reference</span><b>${formatMinutes(ref.median)}</b></div>` : ''}
-        <div class="stat"><span>Methods (separate series)</span><b>${series.length}</b></div>
-        <div class="stat"><span>Days without reading</span><b>${missingDays.length}</b></div>
+      ${series.length > 1 || refLines.length ? html`<ul class="legend">${series.map((s, i) => html`<li><span class="lg lg-${SHAPES[i % 4]} s${(i % 4) + 1}" aria-hidden="true"></span>${s.label}${s.primary && series.length > 1 ? ' (main)' : ''}</li>`)}${refLines.map((r) => html`<li><span class="lg lg-line ${r.cls}" aria-hidden="true"></span>${r.cls === 'ref' ? 'Your usual' : 'Demo rule'}</li>`)}</ul>` : ''}
+      <div class="tiles">
+        <div class="tile"><span>Latest</span><b class="mono">${latest ? formatValue(latest) : '—'}</b></div>
+        <div class="tile"><span>Average ${period} days</span><b class="mono">${avgText}</b></div>
+        <div class="tile"><span>Your usual</span><b class="mono">${ref ? formatMinutes(ref.median) : '—'}</b></div>
+        <div class="tile ${gapTone}"><span>Gap to your usual</span><b class="mono">${gapText}</b></div>
       </div>
-      ${series.length > 1 ? html`<p class="hint">${icon('info')}Different methods, sites or samples are separate series and are never merged or compared directly.</p>` : ''}
+      <dl class="prov-row">
+        <div><dt>Source</dt><dd>${primary?.label ?? '—'}</dd></div>
+        <div><dt>Frequency</dt><dd>${DAILY.includes(metric) ? 'Daily' : 'When taken'}</dd></div>
+        <div><dt>Quality</dt><dd>${current.length} reading${current.length === 1 ? '' : 's'} · ${missingDays.length ? `${missingDays.length} missing` : 'none missing'}</dd></div>
+        <div><dt>Origin</dt><dd>${c.id === 'demo' ? 'Simulated · demo dataset' : 'Simulated · this device'}</dd></div>
+        <div><dt>Thresholds</dt><dd>${metric === 'sleep_main' && c.rules.length ? 'Demo rule, not clinical' : 'None set'}</dd></div>
+      </dl>
+      ${series.length > 1 ? html`<p class="hint">${icon('info')}Different methods are separate series, never merged.</p>` : ''}
     </section>
-    <section class="card" aria-labelledby="table-h">
-      <h2 id="table-h">Readings table</h2>
+    <details class="card fold" aria-labelledby="table-h">
+      <summary><h2 id="table-h">All readings and provenance</h2><small>${tableRows.length + missingDays.length} rows</small></summary>
       <div class="table-wrap"><table>
         <caption class="sr-only">${VARIABLE_META[metric].label}, Day ${fromDay} to ${today}, newest first</caption>
         <thead><tr><th scope="col">Day</th><th scope="col">Time (UTC)</th><th scope="col">Value</th><th scope="col">Series (method · context)</th><th scope="col">Quality</th><th scope="col">Source</th></tr></thead>
@@ -198,17 +234,13 @@ export async function renderTrends(): Promise<Html> {
           ${tableRows.map((o) => html`<tr><td class="mono">Day ${o.missionDay}</td><td class="mono">${hhmm(Date.parse(o.measuredAt))}</td><td>${obsValue(o)}${o.version > 1 ? html` <small class="muted">corrected v${o.version}</small>` : ''}</td><td>${seriesLabel(o)}</td><td>${qualityBadge(o)}</td><td>${sourceLabel(o)}</td></tr>`)}
         </tbody>
       </table></div>
-    </section>
-    <section class="card prov" aria-labelledby="prov-h">
-      <h2 id="prov-h">Provenance</h2>
       <dl class="defs">
         <dt>Unit</dt><dd>${current[0]?.unit ?? VARIABLE_META[metric].unit ?? '—'}</dd>
-        <dt>Methods</dt><dd>${series.map((s) => s.label).join(' / ') || '—'}</dd>
         <dt>Data</dt><dd>${c.id === 'demo' ? 'Simulated crew data · versioned demo dataset demo-2026.11-v1 and entries made on this device' : 'Simulated crew data · Explore app examples and entries made on this device'}</dd>
-        ${ref ? html`<dt>Personal reference</dt><dd>Median of ${ref.nights} valid sleep-diary nights, Days ${ref.fromDay}–${ref.toDay}. Shown as context only.</dd>` : ''}
+        ${ref ? html`<dt>Your usual</dt><dd>Median of ${ref.nights} valid sleep-diary nights, Days ${ref.fromDay}–${ref.toDay}. Context only.</dd>` : ''}
         ${metric === 'sleep_main' ? html`<dt>Rule</dt><dd>${c.rules.length ? `${SLEEP_RULE.label} (Demo rule): ${SLEEP_RULE.description}` : 'No mission rule configured.'}</dd>` : ''}
       </dl>
-    </section>`;
+    </details>`;
 }
 
 import { registerActions } from '../../router-actions';

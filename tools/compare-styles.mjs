@@ -22,13 +22,14 @@ const grab = (props) => {
 };
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+await ctx.addInitScript(() => { if (location.port !== '8001') ['astronaut', 'cmo', 'ground'].forEach((r) => localStorage.setItem('quinta.guide.' + r, 'done')); });
 const m = await ctx.newPage();
 await m.goto(MOCK + '/index.html');
 await m.waitForTimeout(1500);
 await m.evaluate(() => document.querySelector('[data-scn="j142"]')?.click());
 const a = await ctx.newPage();
 await a.goto(APP + '/');
-await a.getByRole('button', { name: /demo/i }).first().click();
+await a.getByRole('button', { name: /Astronaut/ }).first().click();
 await a.waitForTimeout(800);
 const pairs = [['accueil', '/overview', 'astronaut'], ['checkin', '/check-in', 'astronaut'], ['suivi', '/trends', 'astronaut'], ['corps', '/body', 'astronaut'], ['equipage', '/crew', 'cmo']];
 const diffs = new Map();

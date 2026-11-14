@@ -32,7 +32,7 @@ function obs(ws: WorkspaceId, crewId: string, day: number, p: Partial<Observatio
 function dailyCheckin(ws: WorkspaceId, crewId: string, day: number, v: { sleep: number; drowsiness: number; mood: number; hr: number }, source: Src): { rows: Observation[]; record: CheckinRecord } {
     const rows = [
         obs(ws, crewId, day, { variable: 'sleep_main', value: v.sleep, unit: 'min', method: SLEEP_RULE.method, context: { episode: 'main sleep ending this mission day', wakeDay: String(day) } }, source),
-        obs(ws, crewId, day, { variable: 'drowsiness', value: v.drowsiness, unit: 'score 1–9', method: 'QUINTA drowsiness scale (KSS-inspired)' }, source),
+        obs(ws, crewId, day, { variable: 'drowsiness', value: v.drowsiness, unit: 'score 1–9', method: 'HEXTA drowsiness scale (KSS-inspired)' }, source),
         obs(ws, crewId, day, { variable: 'mood', value: v.mood, unit: 'score 1–5', method: 'self-report' }, source),
         obs(ws, crewId, day, { variable: 'resting_hr', value: v.hr, unit: 'bpm', method: 'Manual pulse count', context: { rest: 'yes' } }, source),
     ];
@@ -207,7 +207,7 @@ async function seedExplore(): Promise<void> {
     examples.forEach((m, i) => {
         const d = today - examples.length + i;
         rows.push(obs(ws, 'okafor', d, { variable: 'sleep_main', value: m, unit: 'min', method: SLEEP_RULE.method }, 'example'));
-        rows.push(obs(ws, 'okafor', d, { variable: 'drowsiness', value: 4 + i, unit: 'score 1–9', method: 'QUINTA drowsiness scale (KSS-inspired)' }, 'example'));
+        rows.push(obs(ws, 'okafor', d, { variable: 'drowsiness', value: 4 + i, unit: 'score 1–9', method: 'HEXTA drowsiness scale (KSS-inspired)' }, 'example'));
     });
     rows.push(obs(ws, 'lindqvist', today - 1, { variable: 'sleep_main', value: 455, unit: 'min', method: SLEEP_RULE.method }, 'example'));
     await db.observations.bulkAdd(rows);

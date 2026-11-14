@@ -83,3 +83,15 @@ tools/build-anatomy-hra.mjs  builds the female / male anatomy GLBs from the HuBM
 tests/js · tests/Feature · tests/e2e
 reference/                kit references: cadrage v5.2, original mockup, kit prompt
 ```
+
+## Role-based redesign (local branch)
+
+The current branch adds Today, a dedicated symptom page, a shared review queue and a separate authenticated Laravel workspace. The existing offline demo, J138/J142 scenarios, report queue and lazy 3D viewer are retained. 2D now opens first.
+
+```bash
+./preview.sh   # build, migrate the local database, prepare local fictional accounts, serve on port 8001
+```
+
+Open **http://localhost:8001**. Start demo needs no account. Sign in uses the two generated local profiles; credentials are stored only in `storage/app/private/local-profiles.txt` (ignored, mode 0600). Invitations are the next account-provisioning step. Connected records and photos are mission-scoped on the onboard server; their private pages are never cached by the demo service worker. Demo and account data are separate.
+
+See [the redesign handoff](docs/ROLE_REDESIGN.md) for the backup SHA/tag, rollback command, design decisions, actual test results, browser/environment blockers and remaining acceptance checks. Existing screenshots are Claude's historical references; no new browser captures were possible in the restricted agent environment.

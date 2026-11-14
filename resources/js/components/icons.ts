@@ -35,6 +35,7 @@ const P: Record<string, string> = {
     pause: '<path d="M7 4h3v16H7zM14 4h3v16h-3z"/>',
     cube: '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    chev: '<path d="m6 9 6 6 6-6"/>',
     moon: '<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     minus: '<path d="M5 12h14"/>',
