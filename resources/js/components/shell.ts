@@ -3,11 +3,10 @@ import { reviewItems } from '../data/experience';
 import { QUEUE_LABEL, type QueueState } from '../domain/queue';
 import { hhmm, longDate, missionDay } from '../domain/time';
 import { isNight } from '../fx';
-import { html, raw, type Html } from '../lib/html';
-import { app, cfg, homeFor, me, ws } from '../state';
+import { html, type Html } from '../lib/html';
+import { app, cfg, EMBEDDED, homeFor, me, ws, type Viewport } from '../state';
 import { icon } from './icons';
 import { takePageTitle } from './ui';
-import { formatButtons, IN_FRAME } from '../preview-device';
 
 interface NavItem {
     href: string;
@@ -73,8 +72,6 @@ export async function renderShell(view: Html): Promise<Html> {
     const c = cfg();
     const day = missionDay(app.now, c.epoch);
     const who = repo.memberStatic(ws(), me());
-    const astro = repo.memberStatic(ws(), c.astronautId);
-    const cmo = repo.memberStatic(ws(), c.cmoId);
     const reports = await repo.reportsFor(ws());
     const counts = reports.reduce<Record<string, number>>((acc, r) => ((acc[r.queue.state] = (acc[r.queue.state] ?? 0) + 1), acc), {});
     const queueSummary = (['retry', 'sending', 'queued', 'received'] as QueueState[]).filter((s) => counts[s]).map((s) => `${counts[s]} ${QUEUE_LABEL[s]}`);
@@ -89,19 +86,21 @@ export async function renderShell(view: Html): Promise<Html> {
     const rest = items.filter((i) => !tabs.includes(i));
 
     return html`
-    ${IN_FRAME ? '' : previewBar(demo, astro.shortName, cmo.shortName, repo.memberStatic(ws(), c.groundId).shortName)}
-    <div class="app ${demo ? 'is-demo' : 'is-explore'}">
+    ${EMBEDDED ? '' : await previewBar()}
+    <div class="app ${demo ? 'is-demo' : 'is-explore'} ${app.rail ? 'rail' : ''}">
       <aside class="side" aria-label="Main navigation">
         <div class="sb-top">
-          <a href="/" data-link class="brand" aria-label="QUINTA home: choose demo or explore">
-            <img src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="132" height="36">
-          </a>
+          <button type="button" class="brand brand-toggle" data-action="rail-toggle" aria-expanded="${!app.rail}" aria-controls="side-nav" title="${app.rail ? 'Expand the menu' : 'Collapse the menu'}">
+            <span class="brand-mark"><svg data-emblem width="38" height="38" aria-hidden="true" focusable="false"></svg></span>
+            <b>HEXTA</b>
+            <span class="sr-only">${app.rail ? 'Expand the menu' : 'Collapse the menu'}</span>
+          </button>
         </div>
         <a href="${homeFor()}" data-link class="sb-today">
           <span class="sb-orb t-${status.tone}" aria-hidden="true"><b>${day}</b></span>
           <span><span class="sb-k">Today · Day ${day}</span><span class="sb-st st-${status.tone}">${status.text}</span><span class="sb-clock mono">${hhmm(app.now)} UTC</span></span>
         </a>
-        <nav class="sb-nav">
+        <nav class="sb-nav" id="side-nav">
           <span class="sb-group">${ROLE_GROUP[app.role]}</span>
           ${items.map((i) => html`<a href="${i.href}" data-link class="sb-item" ${isActive(i) ? html`aria-current="page"` : ''}><span class="sb-ico">${icon(i.ic)}</span><span class="sb-lbl">${i.label}</span>${i.badge ? html`<span class="sb-badge" aria-hidden="true">${i.badge}</span>` : ''}</a>`)}
         </nav>
@@ -125,10 +124,10 @@ export async function renderShell(view: Html): Promise<Html> {
           </div>
           <div class="status-strip">
             <button type="button" class="chip ${app.groundLink ? '' : 'off'}" data-action="toggle-link" aria-pressed="${app.groundLink}" title="Simulated ground link. Select to cut or restore it. ${app.browserOnline ? 'Device online' : 'Device offline'} · ${app.offlineReady ? 'ready offline' : 'preparing offline'}.">
-              <span class="link ${app.groundLink ? '' : 'off'}"><span class="pulse"></span></span><span>${app.groundLink ? html`Ground <b>connected</b>` : html`Ground <b>offline</b>`}</span>${app.offlineReady ? html`<span class="chip-ok" aria-label="Ready offline">${icon('ok', 'sm')}</span>` : ''}
+              <span class="link ${app.groundLink ? '' : 'off'}"><span class="pulse"></span></span><span>${app.groundLink ? html`Ground <b>connected</b>` : html`Ground <b>offline</b>`}</span>
             </button>
-            ${queueSummary.length && app.role === 'cmo' ? html`<a href="/reports" data-link class="chip info" title="Ground report queue">${icon('send', 'sm')}Reports <b>${queueSummary.join(' · ')}</b></a>` : ''}
-            <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><kbd>Ctrl K</kbd></button>
+            ${statusMenu(queueSummary, counts.retry ?? 0)}
+            <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><span class="pal-l">Go to</span></button>
             <button type="button" class="chip night-btn" data-action="night-toggle" aria-pressed="${isNight()}" title="Soft night: warm, dark colours for the sleep period">${icon('moon', 'sm')}<span class="sr-only">Soft night</span></button>
             ${app.role === 'astronaut' ? html`<a href="/help" data-link class="chip help-btn" aria-label="Help">${icon('help', 'sm')}</a>` : ''}
             <a href="/notifications" data-link class="chip bell ${app.route.segments[0] === 'notifications' ? 'active' : ''}" aria-label="Notifications, ${app.unread} unread">${icon('bell', 'sm')}${app.unread ? html`<span class="count">${app.unread}</span>` : ''}</a>
@@ -136,7 +135,7 @@ export async function renderShell(view: Html): Promise<Html> {
         </header>
         ${app.route.segments[0] === 'overview' ? '' : banner}
         <main id="main" tabindex="-1" class="view">${view}</main>
-        <p class="disclaimer">QUINTA · Synergy 5 research prototype for the NASA Space Apps Challenge 2026. Simulated data and demo rules, no clinical validation, not affiliated with NASA. <a href="/help#credits" data-link>Sources and credits</a></p>
+        <p class="disclaimer">HEXTA · Synergy 5 research prototype for the NASA Space Apps Challenge 2026. Simulated data and demo rules, no clinical validation, not affiliated with NASA. <a href="/help#credits" data-link>Sources and credits</a></p>
         <nav class="tabbar" aria-label="Main navigation">
           ${tabs.map((i) => html`<a href="${i.href}" data-link ${isActive(i) ? html`aria-current="page"` : ''}>${icon(i.ic)}<span>${i.label.replace(' & Risks', '').replace('Review queue', 'Reviews')}</span>${i.badge ? html`<i class="dotb" aria-hidden="true"></i>` : ''}</a>`)}
           ${rest.length ? html`<button type="button" data-action="palette" class="${rest.some(isActive) ? 'on' : ''}" aria-label="More screens and actions">${icon('menu')}<span>More</span></button>` : ''}
@@ -145,11 +144,37 @@ export async function renderShell(view: Html): Promise<Html> {
     </div>`;
 }
 
-/** The mockup's preview bar: product line, demo scenario controls, role. Outside the app frame. */
-function previewBar(demo: boolean, astro: string, cmo: string, ground: string): Html {
+/**
+ * Device, offline cache and report queue in one chip (the mockup shows three quiet chips, not six).
+ * The chip names the state that needs attention, if any; the panel lists all three in words.
+ */
+function statusMenu(queueSummary: string[], retries: number): Html {
+    const issue = !app.browserOnline ? 'Device offline' : retries ? `${retries} report${retries > 1 ? 's' : ''} to retry` : !app.offlineReady ? 'Preparing offline' : '';
+    const tone = !app.browserOnline || retries ? 'off' : !app.offlineReady ? '' : 'ok';
+    return html`<details class="st-menu pop" data-pop>
+      <summary class="chip ${tone}" title="Device, offline cache and ground reports">
+        ${icon(issue ? 'info' : 'ok', 'sm')}<b>${issue || 'All set'}</b>${icon('chev', 'sm')}
+      </summary>
+      <div class="pop-panel st-panel" role="group" aria-label="Device and report status">
+        <p class="${app.browserOnline ? '' : 'st-off'}">${icon('device', 'sm')}<span>Device</span><b>${app.browserOnline ? 'online' : 'offline'}</b></p>
+        <p class="${app.offlineReady ? 'st-ok' : ''}">${icon('cache', 'sm')}<span>Offline cache</span><b>${app.offlineReady ? 'Ready offline' : 'Preparing'}</b></p>
+        <a href="/reports" data-link class="${retries ? 'st-off' : ''}">${icon('send', 'sm')}<span>Ground reports</span><b>${queueSummary.length ? queueSummary.join(' · ') : 'None queued'}</b></a>
+      </div>
+    </details>`;
+}
+
+const VIEWPORT_LABEL: Record<Viewport, string> = { auto: 'Adaptive', desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' };
+
+/** The mockup's preview bar: product line, demo scenario controls, role, display. Outside the app frame. */
+export async function previewBar(): Promise<Html> {
+    const c = cfg();
+    const demo = ws() === 'demo';
+    const astro = repo.memberStatic(ws(), c.astronautId).shortName;
+    const cmo = repo.memberStatic(ws(), c.cmoId).shortName;
+    const ground = repo.memberStatic(ws(), c.groundId).shortName;
     return html`
     <div class="preview">
-      <span class="pv-line"><strong>QUINTA</strong> · ${demo ? 'guided demo' : 'explore app'} · Synergy 5 · simulated data</span>
+      <span class="pv-line"><strong>HEXTA</strong> · ${demo ? 'guided demo' : 'explore app'} · Synergy 5 · simulated data</span>
       ${demo
           ? html`<details class="demo-tools"><summary>Scenario controls</summary><section class="scn" aria-label="Demo controls">
           <span class="scn-l">Demo</span>
@@ -162,18 +187,22 @@ function previewBar(demo: boolean, astro: string, cmo: string, ground: string): 
           <label class="scn-check"><input type="checkbox" data-action="lose-receipt" ${app.loseNextReceipt ? 'checked' : ''}> Lose next receipt</label>
         </section></details>`
           : html`<span class="scn"><span class="scn-l">Real clock · no mission rule configured</span></span>`}
-      <div class="pv-btns pv-formats" role="group" aria-label="Preview format">${raw(formatButtons())}</div>
       <div class="pv-btns" role="group" aria-label="Role">
         <button type="button" data-action="role" data-role="astronaut" aria-pressed="${app.role === 'astronaut'}">Astronaut · ${astro}</button>
         <button type="button" data-action="role" data-role="cmo" aria-pressed="${app.role === 'cmo'}">CMO · ${cmo}</button>
         <button type="button" data-action="role" data-role="ground" aria-pressed="${app.role === 'ground'}">Houston · ${ground}</button>
+      </div>
+      <div class="pv-btns pv-view" role="group" aria-label="Preview display">
+        ${(Object.keys(VIEWPORT_LABEL) as Viewport[]).map((v) => html`<button type="button" data-action="viewport" data-viewport="${v}" aria-pressed="${app.viewport === v}">${VIEWPORT_LABEL[v]}</button>`)}
       </div>
     </div>`;
 }
 
 async function reminderBanner(): Promise<Html> {
     const t = await repo.todaysTask(ws(), me(), app.now);
-    if (!t || !t.ev.bannerVisible || app.route.segments[0] === 'check-in') return html``;
+    // Overview already leads with the same reminder in its hero card: no second banner there
+    const here = app.route.segments[0] ?? 'overview';
+    if (!t || !t.ev.bannerVisible || here === 'check-in' || here === 'overview') return html``;
     return html`
     <section class="remind banner" aria-labelledby="banner-title">
       <span class="rm-ico">${icon('bell')}</span>
@@ -229,13 +258,21 @@ async function coach(): Promise<Html> {
     ];
     const current = steps.findIndex((s) => !s.done);
     const cur = steps[current];
-    return html`<section class="coach" aria-label="Mission guide">
-      <ol class="coach-steps">${steps.map((s, i) => html`<li class="${s.done ? 'done' : i === current ? 'now' : ''}" ${i === current ? html`aria-current="step"` : ''}><span class="coach-n">${s.done ? icon('ok', 'sm') : i + 1}</span>${s.label}</li>`)}</ol>
-      <div class="coach-now">
-        ${cur
-            ? html`<p><b>Step ${current + 1} of 5.</b> ${cur.why}</p><button type="button" class="coach-cta" ${cur.attrs}>${cur.cta}${icon('arrow', 'sm')}</button>`
-            : html`<p><b>Scenario complete.</b> Everything happened on board. The report has now reached Houston.</p>${app.role !== 'ground' ? html`<button type="button" class="coach-cta" data-action="coach-go" data-role="ground" data-href="/ground">See it in Houston${icon('arrow', 'sm')}</button>` : ''}<button type="button" class="coach-cta ghost" data-action="scenario" data-day="142">Play it again${icon('retry', 'sm')}</button>`}
-        <button type="button" class="coach-x" data-action="coach-hide" aria-label="Hide the mission guide">${icon('close', 'sm')}</button>
-      </div>
+    const doneCount = steps.filter((s) => s.done).length;
+    // one slim line: where we are, why, and the one button. The five steps open on demand.
+    return html`<section class="coach coach-slim" aria-label="Mission guide">
+      <details class="coach-more pop" data-pop>
+        <summary class="coach-pill" title="Show the five steps of the guided demo">
+          <span class="coach-ring" style="--p:${doneCount / steps.length}" aria-hidden="true"></span>
+          ${cur ? html`<span>Step ${current + 1}/5 · <b>${cur.label}</b></span>` : html`<span><b>Scenario complete</b></span>`}
+          ${icon('chev', 'sm')}
+        </summary>
+        <ol class="coach-steps pop-panel">${steps.map((s, i) => html`<li class="${s.done ? 'done' : i === current ? 'now' : ''}" ${i === current ? html`aria-current="step"` : ''}><span class="coach-n">${s.done ? icon('ok', 'sm') : i + 1}</span>${s.label}</li>`)}</ol>
+      </details>
+      <p class="coach-why">${cur ? cur.why : 'Everything happened on board. The report has now reached Houston.'}</p>
+      ${cur
+          ? html`<button type="button" class="coach-cta" ${cur.attrs}>${cur.cta}${icon('arrow', 'sm')}</button>`
+          : html`${app.role !== 'ground' ? html`<button type="button" class="coach-cta" data-action="coach-go" data-role="ground" data-href="/ground">See it in Houston${icon('arrow', 'sm')}</button>` : ''}<button type="button" class="coach-cta ghost" data-action="scenario" data-day="142">Play it again${icon('retry', 'sm')}</button>`}
+      <button type="button" class="coach-x" data-action="coach-hide" aria-label="Hide the mission guide">${icon('close', 'sm')}</button>
     </section>`;
 }

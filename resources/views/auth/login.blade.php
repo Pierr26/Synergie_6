@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in · QUINTA</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in · HEXTA</title>
 @vite(['resources/css/app.css', 'resources/js/main.ts'])
-</head><body><main id="main" class="auth-main"><a href="/"><img src="/assets/brand/quinta-logo.svg" width="160" height="44" alt="QUINTA"></a>
+</head><body><main id="main" class="auth-main"><a href="/"><img src="/assets/brand/hexta-logo.svg" width="66" height="80" alt="HEXTA"></a>
 <section class="card"><span class="mission-kicker">YOUR MISSION WORKSPACE</span><h1>Welcome on board.</h1><p>Sign in with your assigned crew account. Your mission and role are set by the account.</p>
 @if($errors->any())<p role="alert" class="error">{{ $errors->first() }}</p>@endif
 <form action="/login" method="post">@csrf

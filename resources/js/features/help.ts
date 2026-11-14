@@ -117,7 +117,7 @@ export async function renderHelp(): Promise<Html> {
         <dt>Ground link</dt><dd>Simulated link with mission control. When offline, the crew keeps working; reports wait in the queue.</dd>
         <dt>Device online / offline</dt><dd>Network state reported by this browser. Independent from the simulated ground link.</dd>
         <dt>Ready offline</dt><dd>The app is cached on this device and reloads without network.</dd>
-        <dt>No reading</dt><dd>Nothing was recorded. QUINTA never fills a gap with an assumed value.</dd>
+        <dt>No reading</dt><dd>Nothing was recorded. HEXTA never fills a gap with an assumed value.</dd>
         <dt>Not recorded</dt><dd>The crew member explicitly marked the field as unavailable.</dd>
         <dt>Check measurement</dt><dd>Kept, but needs verification (e.g. systolic not above diastolic, unknown site or signal).</dd>
         <dt>Demo rule</dt><dd>SLEEP-001 v1, only in the guided demo: three consecutive diary nights under 360 min ask the CMO for a review. Not a clinical threshold.</dd>
@@ -126,7 +126,7 @@ export async function renderHelp(): Promise<Html> {
       </dl>
     </section>
     <section class="card" id="nasa" aria-labelledby="h-nasa">
-      <h2 id="h-nasa">NASA resources in QUINTA</h2>
+      <h2 id="h-nasa">NASA resources in HEXTA</h2>
       <p class="hint">What each public NASA resource is used for. Crew values are simulated: public NASA pages describe risks and measures, not day-by-day crew vitals.</p>
       <dl class="defs">
         <dt><a href="${SOURCES.S01.url}" target="_blank" rel="noopener">Five hazards of human spaceflight</a></dt><dd>Structure of Overview and Body &amp; Risks: every recorded indicator is linked to one of the five hazards.</dd>
@@ -140,10 +140,10 @@ export async function renderHelp(): Promise<Html> {
       <h2 id="h-credits">Sources &amp; credits</h2>
       <ul class="sources">${Object.values(SOURCES).map((s) => html`<li><a href="${s.url}" target="_blank" rel="noopener">${s.title}</a> · ${s.org}</li>`)}</ul>
       <ul class="credits">
-        <li>QUINTA logo · Synergy 5 team.</li>
-        <li>Lunar window scene · AI-generated image, made for the QUINTA kit. Labelled on screen wherever it appears. Not a NASA photo.</li>
-        <li>3D anatomy · <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noopener">HuBMAP Human Reference Atlas</a> female and male reference bodies (Visible Human, Allen brain), CC BY 4.0, simplified for QUINTA. Motion is illustrative and never reflects a crew member’s heart rate.</li>
-        <li>2D body map · original stylised render from the QUINTA kit.</li>
+        <li>HEXTA logo · Synergy 5 team.</li>
+        <li>Lunar window scene · AI-generated image, made for the HEXTA kit. Labelled on screen wherever it appears. Not a NASA photo.</li>
+        <li>3D anatomy · <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noopener">HuBMAP Human Reference Atlas</a> female and male reference bodies (Visible Human, Allen brain), CC BY 4.0, simplified for HEXTA. Motion is illustrative and never reflects a crew member’s heart rate.</li>
+        <li>2D body map · original stylised render from the HEXTA kit.</li>
         <li>Fonts · Figtree, Young Serif and IBM Plex Mono, SIL Open Font License 1.1, served from this app.</li>
         <li>Libraries · Laravel (MIT), Vite (MIT), Dexie.js (Apache-2.0), three.js (MIT).</li>
         <li>All crew records are simulated. Not affiliated with or endorsed by NASA.</li>

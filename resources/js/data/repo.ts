@@ -287,7 +287,7 @@ export async function submitCheckin(ws: WorkspaceId, crewId: string, form: Check
             variable: 'drowsiness',
             value: form.drowsinessNotRecorded ? null : form.drowsiness,
             unit: 'score 1–9',
-            method: 'QUINTA drowsiness scale (KSS-inspired)',
+            method: 'HEXTA drowsiness scale (KSS-inspired)',
             quality: form.drowsinessNotRecorded ? 'not-recorded' : 'valid',
         }, iso, true);
         ids.push(drowsy.id);

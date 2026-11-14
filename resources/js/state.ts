@@ -17,7 +17,23 @@ export interface AppState {
     browserOnline: boolean;
     offlineReady: boolean;
     unread: number;
+    /** Preview display chosen in the preview bar: the app itself, or the app inside a device frame. */
+    viewport: Viewport;
+    /** Desktop sidebar folded to the icon rail by the logo button. */
+    rail: boolean;
 }
+
+export type Viewport = 'auto' | 'desktop' | 'tablet' | 'mobile';
+
+/** Device sizes of the preview frame, as in the HEXTA mockup (width × height). */
+export const VIEWPORT_SIZE: Record<Exclude<Viewport, 'auto'>, [number, number]> = {
+    desktop: [1280, 800],
+    tablet: [834, 1000],
+    mobile: [390, 800],
+};
+
+/** True when this document runs inside the preview device frame. */
+export const EMBEDDED = typeof window !== 'undefined' && window.self !== window.top;
 
 function readPref<T extends string>(key: string, allowed: readonly T[], fallback: T | null): T | null {
     try {
@@ -47,7 +63,15 @@ export const app: AppState = {
     browserOnline: typeof navigator === 'undefined' ? true : navigator.onLine,
     offlineReady: false,
     unread: 0,
+    viewport: readPref<Viewport>('hexta.viewport', ['auto', 'desktop', 'tablet', 'mobile'], 'auto') ?? 'auto',
+    rail: readPref<'1' | '0'>('hexta.rail', ['1', '0'], '0') === '1',
 };
+
+/** Re-reads the preferences another document (preview bar or device frame) may have changed. */
+export function syncPrefs(): void {
+    app.role = readPref<Role>('quinta.role', ['astronaut', 'cmo', 'ground'], app.role) ?? app.role;
+    app.rail = readPref<'1' | '0'>('hexta.rail', ['1', '0'], '0') === '1';
+}
 
 export function cfg(): WorkspaceConfig {
     return WORKSPACES[app.ws ?? 'demo'];

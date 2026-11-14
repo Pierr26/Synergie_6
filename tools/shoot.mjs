@@ -3,7 +3,7 @@ import { chromium } from '@playwright/test';
 const [out, width, ...paths] = process.argv.slice(2);
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const ctx = await browser.newContext({ viewport: { width: Number(width), height: 900 }, deviceScaleFactor: 1 });
-await ctx.addInitScript(() => { localStorage.setItem('quinta.guide.astronaut', 'done'); localStorage.setItem('quinta.guide.cmo', 'done'); localStorage.setItem('quinta.guide.ground', 'done'); });
+await ctx.addInitScript(() => { localStorage.setItem('quinta.guide.astronaut', 'done'); localStorage.setItem('quinta.guide.cmo', 'done'); localStorage.setItem('quinta.guide.ground', 'done'); localStorage.removeItem('hexta.viewport'); });
 const page = await ctx.newPage();
 page.on('console', (m) => m.type() === 'error' && console.log('console error:', m.text()));
 page.on('pageerror', (e) => console.log('page error:', e.message));

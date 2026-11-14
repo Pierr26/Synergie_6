@@ -42,7 +42,7 @@ export async function renderEntry(): Promise<Html> {
     <div class="entry entry-roles">
       <main class="entry-panel" id="main" tabindex="-1">
         <header class="entry-top">
-          <img class="entry-logo" src="/assets/brand/quinta-logo.svg" alt="QUINTA" width="160" height="44">
+          <img class="entry-logo" src="/assets/brand/hexta-logo.svg" alt="HEXTA" width="66" height="80">
           <div class="entry-mode" role="radiogroup" aria-label="Which crew">
             <button type="button" role="radio" aria-checked="${m === 'demo'}" data-action="entry-mode" data-ws="demo">${icon('play', 'sm')}Guided demo</button>
             <button type="button" role="radio" aria-checked="${m === 'explore'}" data-action="entry-mode" data-ws="explore">${icon('arrow', 'sm')}Free sandbox</button>

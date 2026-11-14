@@ -58,7 +58,7 @@ const MODEL_URL: Record<Sex, string> = { female: '/assets/models/anatomy-female.
 
 type MeshId = 'skin' | 'brain' | 'eyes' | 'heart' | 'vessels' | 'lungs' | 'kidneys' | 'bones' | 'muscles' | 'digestive';
 
-/** Colours come from the QUINTA palette (coral, amber, ciel, menthe) and its hero tints. */
+/** Colours come from the HEXTA palette (coral, amber, ciel, menthe) and its hero tints. */
 const TINT: Record<Exclude<MeshId, 'skin'>, string> = {
     brain: '#f3b3a3',
     eyes: '#4fa9c2',

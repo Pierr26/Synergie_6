@@ -11,7 +11,7 @@
     <h2>{{ $follow ? 'Respond to follow-up' : (!$todayCheckin ? 'A moment for your health.' : ($pending ? 'Crew review pending' : 'Your check-in is saved.')) }}</h2>
     <p>{{ $follow ? collect($follow->thread)->last()['text'] : (!$todayCheckin ? 'Sleep duration and drowsiness first. About one minute.' : 'Your check-in is saved on the onboard server and available to your medical officer.') }}</p>
     <a class="btn btn-primary" href="{{ $follow ? '/account/cases/'.$follow->id.'#response' : (!$todayCheckin ? '/account/check-in' : ($pending ? '/account/cases/'.$pending->id : '/account/cases/'.$todayCheckin->id)) }}">{{ $follow ? 'Respond to follow-up' : (!$todayCheckin ? 'Start check-in' : ($pending ? 'Track crew review' : 'View today’s summary')) }}</a>
-</div><figure class="today-window"><img src="/assets/illustrations/lunar-window.webp" width="1200" height="800" alt="Illustrated lunar window"><figcaption>QUINTA · mission illustration</figcaption></figure></section>
+</div><figure class="today-window"><img src="/assets/illustrations/lunar-window.webp" width="1200" height="800" alt="Illustrated lunar window"><figcaption>HEXTA · mission illustration</figcaption></figure></section>
 <nav class="journey-links" aria-label="Other available actions"><a class="journey-link" href="/account/check-in">Daily Check-in</a><a class="journey-link" href="/account/symptoms">Report a Symptom</a><a class="journey-link" href="/account/follow-up">Follow-up</a></nav>
 @endif
 @if($page === 'check-in' || $page === 'symptoms')

@@ -59,8 +59,9 @@ function validate(f: CheckinForm): { errors: Record<string, string>; minutes: nu
 }
 
 registerActions({
-    'checkin-submit': async (el) => {
-        if (step < 3) {
+    'checkin-submit': async (el, e) => {
+        const submitter = (e as SubmitEvent | undefined)?.submitter as HTMLElement | null | undefined;
+        if (step < 3 && submitter?.dataset.save !== '1') {
             // Enter inside a step moves on instead of saving early
             (el.querySelector('.ci-nav .btn-primary') as HTMLButtonElement | null)?.click();
             return;
@@ -117,6 +118,7 @@ registerActions({
     },
     'checkin-edit': async () => {
         editing = true;
+        step = 0;
         await bus.refresh();
         (document.getElementById('sleepHours') as HTMLElement | null)?.focus();
     },
@@ -176,7 +178,9 @@ export async function renderCheckin(): Promise<Html> {
         form = correction ?? (record ? { ...record.form } : { ...repo.EMPTY_FORM });
         formKey = key;
         errors = {};
-        step = 0;
+        // a waiting draft with both required answers opens straight on "Check and save" (teammate's fast path)
+        const req = (form.sleepNotRecorded || !!(form.sleepHours.trim() || form.sleepMinutes.trim())) && (form.drowsinessNotRecorded || !!form.drowsiness);
+        step = req ? 3 : !(form.sleepNotRecorded || form.sleepHours.trim() || form.sleepMinutes.trim()) ? 0 : 1;
     }
 
     if (app.role !== 'astronaut') {
@@ -205,7 +209,7 @@ export async function renderCheckin(): Promise<Html> {
               ${record.form.mood ? html`<dt>Mood</dt><dd class="mono">${record.form.mood} / 5 · ${MOOD_ANCHORS[record.form.mood]}</dd>` : ''}
               ${record.form.symptoms ? html`<dt>Symptoms or concern</dt><dd>${record.form.symptoms === 'yes' ? 'Yes' : record.form.symptoms === 'no' ? 'No' : 'Skipped'}${record.form.symptomsComment ? ` · “${record.form.symptomsComment}”` : ''}</dd>` : ''}
               ${record.form.hr ? html`<dt>Resting heart rate</dt><dd class="mono">${record.form.hr} bpm${record.form.hrRest !== 'yes' ? ' · rest not confirmed' : ''}</dd>` : ''}
-              <dt>Method</dt><dd>Sleep diary · QUINTA drowsiness scale · entered on this device</dd>
+              <dt>Method</dt><dd>Sleep diary · HEXTA drowsiness scale · entered on this device</dd>
             </dl>
             <div class="row-actions"><a href="/overview" data-link class="btn btn-primary">Back to Today</a><button type="button" class="btn btn-quiet" data-action="checkin-edit">Correct today’s check-in</button></div>
           </section>
@@ -248,6 +252,7 @@ export async function renderCheckin(): Promise<Html> {
       <p class="step-note">${icon('info', 'sm')}Saved on this device as you go. Works with the ground link offline.</p>
     </nav>
     <form id="checkin-form" class="card checkin ci-steps" data-action="checkin-submit" data-mount="checkin" novalidate>
+      <div class="ci-progress" aria-hidden="true"><span style="width:${((step + 1) / 4) * 100}%"></span></div>
       <p class="draft-status" id="draft-status" role="status">${isDraft ? `Draft saved on this device · ${hhmm(Date.parse(record!.savedAt))} UTC` : 'Not saved yet'}</p>
 
       ${pane(0, `Good morning, ${repo.memberStatic(ws(), crewId).shortName}. How long did you sleep?`, 'Your best estimate of time actually asleep in your main sleep, without naps. It counts for today.', html`
@@ -315,17 +320,20 @@ export async function renderCheckin(): Promise<Html> {
       </details>`)}
 
       ${pane(3, 'Check and save', 'Saved on this device and visible to your medical officer on board, even with the ground link offline.', html`
-      <dl class="summary ci-review">
-        <dt>Main sleep</dt><dd class="mono">${sleepText || '—'}</dd>
-        <dt>Drowsiness now</dt><dd class="mono">${drowsyText || '—'}</dd>
-        ${form.mood ? html`<dt>Mood</dt><dd class="mono">${form.mood} / 5 · ${MOOD_ANCHORS[form.mood]}</dd>` : ''}
-        ${form.symptoms ? html`<dt>Symptom or concern</dt><dd>${form.symptoms === 'yes' ? 'Yes' : form.symptoms === 'no' ? 'No' : 'Skipped'}${form.symptomsComment ? ` · “${form.symptomsComment}”` : ''}</dd>` : ''}
-        ${form.hr ? html`<dt>Resting heart rate</dt><dd class="mono">${form.hr} bpm</dd>` : ''}
+      <dl class="ci-sum">
+        ${[
+            { t: 'Main sleep', v: sleepText, missing: !sleepDone, i: 0 },
+            { t: 'Drowsiness now', v: drowsyText, missing: !drowsyDone, i: 1 },
+            { t: 'Extras', v: [form.mood ? `Mood ${form.mood}/5` : '', form.symptoms ? `Symptom or concern: ${form.symptoms === 'yes' ? 'yes' : form.symptoms === 'no' ? 'no' : 'skipped'}${form.symptomsComment ? ` · “${form.symptomsComment}”` : ''}` : '', form.hr ? `${form.hr} bpm` : ''].filter(Boolean).join(' · ') || 'Nothing added', missing: false, i: 2 },
+        ].map((r) => html`<div class="${r.missing ? 'missing' : ''}"><dt>${r.t}</dt><dd class="mono">${r.v || 'Required'}</dd><button type="button" class="btn-link" data-action="ci-step" data-to="${r.i}">Edit<span class="sr-only"> ${r.t}</span></button></div>`)}
       </dl>`)}
 
       <div class="form-actions ci-nav">
-        ${step > 0 ? html`<button type="button" class="btn btn-ghost" data-action="ci-step" data-to="${step - 1}">${icon('back', 'sm')}Previous</button>` : task && task.ev.state === 'due' && task.ev.canSnooze ? html`<button type="button" class="btn btn-quiet" data-action="snooze">Snooze 30 min</button>` : html`<span></span>`}
-        ${step < 3 ? html`<button type="button" class="btn btn-primary" data-action="ci-step" data-to="${step + 1}">${step === 2 ? 'Review' : 'Continue'}${icon('arrow', 'sm')}</button>` : html`<button type="submit" class="btn btn-primary">${icon('ok')}Save check-in</button>`}
+        ${step > 0 ? html`<button type="button" class="btn btn-ghost" data-action="ci-step" data-to="${step - 1}">${icon('back', 'sm')}Previous</button>` : task && task.ev.state === 'due' && task.ev.canSnooze ? html`<button type="button" class="btn btn-quiet" data-action="snooze">Snooze 30 min</button>` : ''}
+        <span class="ci-spacer"></span>
+        ${step < 3
+            ? html`${sleepDone && drowsyDone ? html`<button type="submit" class="btn btn-quiet" data-save="1">Save now</button>` : ''}<button type="button" class="btn btn-primary" data-action="ci-step" data-to="${step + 1}">${step === 2 ? 'Review' : 'Continue'}${icon('arrow', 'sm')}</button>`
+            : html`<button type="button" class="btn btn-quiet" data-action="checkin-draft">Save draft</button><button type="submit" class="btn btn-primary" data-save="1">${icon('ok')}Save check-in</button>`}
       </div>
     </form>
     </div>`;
