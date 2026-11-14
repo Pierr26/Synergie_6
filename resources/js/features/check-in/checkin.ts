@@ -14,6 +14,8 @@ let form: CheckinForm = { ...repo.EMPTY_FORM };
 let formKey = '';
 let editing = false;
 let errors: Record<string, string> = {};
+const draftWrites = new WeakMap<HTMLFormElement, Promise<void>>();
+const correctionKey = (crew: string, day: number, request: string | null) => `checkin-edit:${crew}:${day}:${request ?? 'correction'}`;
 
 function readForm(root: HTMLFormElement): CheckinForm {
     const fd = new FormData(root);
@@ -67,7 +69,9 @@ registerActions({
             return;
         }
         const requestId = app.route.query.get('request');
+        await draftWrites.get(el as HTMLFormElement);
         const res = await repo.submitCheckin(ws(), me(), f, v.minutes, app.now, requestId);
+        await repo.kvSet(ws(), correctionKey(me(), missionDay(app.now, cfg().epoch), requestId), null);
         editing = false;
         toast(res.newAlert ? 'Check-in saved on this device. Sleep trend needs review — your CMO was notified.' : 'Check-in saved on this device.');
         await bus.refresh();
@@ -76,7 +80,10 @@ registerActions({
     'checkin-draft': async () => {
         const el = document.getElementById('checkin-form') as HTMLFormElement;
         form = readForm(el);
-        await repo.saveDraft(ws(), me(), form, app.now);
+        await draftWrites.get(el);
+        const existing = await repo.checkinFor(ws(), me(), missionDay(app.now, cfg().epoch));
+        if (existing?.status === 'submitted') await repo.kvSet(ws(), correctionKey(me(), existing.missionDay, app.route.query.get('request')), form);
+        else await repo.saveDraft(ws(), me(), form, app.now);
         toast('Draft saved on this device. Resume it any time today.');
         await bus.refresh();
     },
@@ -87,12 +94,20 @@ registerActions({
     },
     'mount:checkin': (el) => {
         const f = el as HTMLFormElement;
-        const owner = me(), workspace = ws();
-        const persist = () =>
-            void repo.saveDraft(workspace, owner, { ...form }, app.now).then(() => {
-                const s = document.getElementById('draft-status');
-                if (s) s.textContent = `Draft saved on this device · ${hhmm(app.now)} UTC`;
-            });
+        const owner = me(), workspace = ws(), epoch = cfg().epoch, request = app.route.query.get('request');
+        let writes = Promise.resolve();
+        const persist = () => {
+            const snapshot = { ...form }, at = app.now;
+            writes = writes.then(async () => {
+                const day = missionDay(at, epoch);
+                const existing = await repo.checkinFor(workspace, owner, day);
+                if (existing?.status === 'submitted') await repo.kvSet(workspace, correctionKey(owner, day, request), snapshot);
+                else await repo.saveDraft(workspace, owner, snapshot, at);
+                const status = f.querySelector('#draft-status');
+                if (status) status.textContent = `Draft saved on this device · ${hhmm(at)} UTC`;
+            }).catch(() => toast('Draft could not be saved. Keep this page open and try again.'));
+            draftWrites.set(f, writes);
+        };
         // Every change is saved immediately, so a quick reload keeps the latest draft.
         f.addEventListener('change', () => {
             form = readForm(f);
@@ -126,10 +141,11 @@ export async function renderCheckin(): Promise<Html> {
     const record = await repo.checkinFor(ws(), crewId, day);
     const task = await repo.todaysTask(ws(), crewId, app.now);
     const reqId = app.route.query.get('request');
-    const key = `${ws()}|${crewId}|${day}|${record?.id ?? 'none'}|${record?.status ?? ''}`;
+    const key = `${ws()}|${crewId}|${day}|${record?.id ?? 'none'}|${record?.status ?? ''}|${reqId ?? ''}|${editing}`;
     if (key !== formKey) {
         // new day, new record or a demo reset: reload from storage; otherwise keep what is being typed
-        if (!(formKey.endsWith('|none|') && record?.status === 'draft')) form = record ? { ...record.form } : { ...repo.EMPTY_FORM };
+        const correction = record?.status === 'submitted' ? await repo.kvGet<CheckinForm | null>(ws(), correctionKey(crewId, day, reqId), null) : null;
+        form = correction ?? (record ? { ...record.form } : { ...repo.EMPTY_FORM });
         formKey = key;
         errors = {};
     }

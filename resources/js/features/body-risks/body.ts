@@ -10,7 +10,7 @@ import { HAZARDS, REGIONS, regionById, SOURCES, type RegionId } from './content'
 let viewer: import('./body3d').Viewer | null = null;
 let viewerState: 'off' | 'loading' | 'on' | 'failed' = 'off';
 let failReason = '';
-/** 3D opens by default where WebGL exists; "Back to 2D" turns it off and is remembered. */
+/** Start in 2D; the GLB is loaded only after an explicit viewer action. */
 const AUTO_3D = false;
 let viewAngle = 0.3;
 let shownRegion: string | null = null;
