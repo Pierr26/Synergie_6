@@ -1,0 +1,4 @@
+# Browser image for QUINTA screenshots and e2e tests (Debian Chromium + Node 22).
+FROM node:22-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends chromium fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
+ENV CHROMIUM_PATH=/usr/bin/chromium

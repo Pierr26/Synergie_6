@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QUINTA · Design preview</title>
+<link rel="stylesheet" href="resources/css/tokens.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.5 var(--font-ui)}img{max-width:100%}.page{max-width:1180px;margin:auto;padding:0 24px 48px}header{display:flex;gap:14px;justify-content:space-between;align-items:center;padding:21px 0;flex-wrap:wrap}header img{width:112px}.tag{display:inline-block;background:var(--info-surface);color:var(--info);padding:5px 10px;border-radius:7px;font-size:.88rem;font-weight:650}nav{display:flex;gap:12px;flex-wrap:wrap}a{color:var(--primary);font-weight:700}.mission{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:18px}.mission p{margin:0;color:var(--muted)}h1{font-size:clamp(2.25rem,6vw,3.6rem);line-height:1.07;letter-spacing:-.048em;margin:9px 0 24px}h2{font-size:1.55rem;line-height:1.15;letter-spacing:-.025em;margin:8px 0 10px}h3{font-size:1.16rem;margin:0 0 12px}p{margin:0 0 12px}.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:18px}.card{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:23px;min-width:0}.review{background:var(--review-surface);border-color:#e7c89e}.review strong{color:var(--review)}.rows{list-style:none;padding:0;margin:0}.rows li{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}.rows li:last-child{border-bottom:0}time,.value{font-family:var(--font-data)}details{margin-top:12px}summary{cursor:pointer;font-weight:700;padding:10px 0}section+section{margin-top:28px}.body-panel{display:grid;grid-template-columns:minmax(100px,220px) 1fr;align-items:center;gap:28px;background:linear-gradient(135deg,#e4efeb,#fbfdfc)}.body-panel img{height:280px;object-fit:contain;justify-self:center}.orbital{background:#102421 url('public/assets/illustrations/lunar-window.webp') center right/cover;color:#fff;min-height:180px;display:flex;align-items:end}.orbital h2{margin:0;text-shadow:0 2px 10px #000}.zones{display:flex;flex-wrap:wrap;gap:8px}.zones span{background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 8px}.muted{color:var(--muted)}.cta{display:inline-block;background:var(--primary);color:var(--on-primary);padding:11px 15px;border-radius:9px;margin:4px 0}.site-note{font-size:.9rem;color:var(--muted);margin-top:18px}@media(max-width:720px){.page{padding-inline:16px}.grid{grid-template-columns:1fr}.card{padding:18px}.body-panel{gap:10px}.body-panel img{height:195px}}
+</style>
+</head>
+<body>
+<div class="page">
+<header><img src="public/assets/brand/quinta-logo.svg" alt="QUINTA"><nav aria-label="Preview sections"><a href="#overview">Overview</a><a href="#body">Body &amp; Risks</a></nav></header>
+<main>
+<section id="overview" aria-labelledby="title">
+  <div class="mission"><p>Mission day 142 · K. Moreau · Astronaut</p><span class="tag">Ground link offline · Simulated</span></div>
+  <h1 id="title">Overview</h1>
+  <div class="grid">
+    <article class="card review">
+      <strong>Demo rule · Crew review pending</strong>
+      <h2>Sleep trend needs review</h2>
+      <p>Three consecutive sleep journal entries below 6 hours. The crew medical officer has been notified on board.</p>
+      <a class="cta" href="#review">View review details</a>
+      <details id="review"><summary>Sleep journal entries</summary><ul class="rows"><li><span>Day 140</span><span class="value">5 h 36</span></li><li><span>Day 141</span><span class="value">5 h 24</span></li><li><span>Day 142</span><span class="value">5 h 12</span></li></ul></details>
+    </article>
+    <article class="card">
+      <h3>Today's schedule</h3>
+      <ul class="rows"><li><span>Daily check-in</span><strong>Saved</strong></li><li><span>Check in with the CMO</span><strong>Pending review</strong></li></ul>
+    </article>
+  </div>
+</section>
+<section class="card body-panel" id="body" aria-labelledby="body-title">
+  <img src="public/assets/illustrations/body-front.webp" alt="" loading="lazy">
+  <div><h2 id="body-title">Body &amp; Risks</h2><p class="muted">Use the body map or choose a region to open a risk and measurement guide.</p><div class="zones"><span>Brain</span><span>Eyes</span><span>Inner ear</span><span>Heart</span><span>Lungs</span><span>Kidneys</span><span>Bones</span><span>Leg muscles</span></div></div>
+</section>
+<section class="card orbital" aria-labelledby="orbit"><h2 id="orbit">Lunar orbit</h2></section>
+<p class="site-note">Design preview · Simulated crew data · Lunar scene generated for QUINTA</p>
+</main>
+</div>
+<script>
+const review = document.querySelector('#review');
+document.querySelector('a[href="#review"]').addEventListener('click', () => {
+  review.open = true;
+  review.querySelector('summary').focus({preventScroll:true});
+});
+</script>
+</body>
+</html>

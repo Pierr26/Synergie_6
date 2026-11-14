@@ -1,0 +1,19 @@
+# Modèles et animations 3D pour QUINTA
+
+| Ressource | Contenu et formats | Licence et décision |
+|---|---|---|
+| [Beating-heart — jalmer](https://sketchfab.com/3d-models/beating-heart-d9845afb1ee64ad094adc96320c67d98) | Cœur en coupe animé. La fiche affiche le téléchargement et 34,4 k triangles. Un projet de référence documente le GLB et son clip squelettique. | CC BY 4.0. La fiche crédite aussi le modèle d’origine de Dreamwasabducted. Conserver les deux attributions, les liens et la mention des modifications. **Premier choix pour la fiche Heart.** |
+| [Animated Beating Heart — nitwit.friends](https://sketchfab.com/3d-models/animated-beating-heart-335cd677c2014ca19e89efd65c7ddc55) | Variante low-poly avec morph target, décrite par le [projet d’intégration Three.js](https://github.com/4180122/heart-animation). Vérifier si le fichier téléchargé contient un clip ou uniquement la cible de déformation. | CC BY 4.0 indiquée par le projet d’intégration. Fiche auteur inaccessible lors de la recherche. Confirmer avant import. |
+| [Z-Anatomy](https://github.com/Z-Anatomy/Models-of-human-anatomy) | Atlas du corps complet dans Blender. Extraire seulement les structures voulues puis exporter en GLB. Il sert de base à une animation à créer ou à des transitions caméra. | CC BY-SA 4.0 selon le dépôt. Reprendre les crédits Z-Anatomy et BodyParts3D et conserver la licence pour les adaptations du modèle distribuées. |
+| [Quaternius — Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) et [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) | Corps entier stylisé avec squelette d’animation et clips humanoïdes séparés. Formats glTF/GLB et Blender selon le pack et la version. Base possible pour une posture ou une animation de présentation. | CC0 indiqué par l’auteur. Ces mouvements portent sur le personnage entier. Pour représenter un organe, utiliser une ressource anatomique dédiée. |
+| [Animated Full Human Body Anatomy — AVRcontent](https://www.fab.com/listings/2a0d65fb-c7b5-4446-8fdd-80e5cbed47e0) | Corps complet avec plusieurs systèmes animés, dont poumons et cœur. La fiche indique FBX et formats convertis dont GLB. | Option commerciale. Vérifier le tarif, les clips exportés et la licence exacte à l’achat. Si licence standard, vérifier les conditions de distribution avant de mettre un GLB directement accessible dans un dépôt ou hébergement public. Voir les [conditions Fab](https://www.fab.com/eula). |
+| [Human Respiratory System Breathing Animation — Brave.Pixel](https://sketchfab.com/3d-models/human-respiratory-system-breathing-animation-50216e5e7716436c8153ad05a732fecb) | Référence visuelle pour expansion pulmonaire et mouvement de la cage thoracique. | Téléchargement et licence réutilisable non confirmés. Garder comme référence visuelle. |
+
+Aucun fichier externe de cette liste n’a été importé ni testé dans QUINTA. Le mannequin original du kit reste disponible pour le corps entier.
+
+## Intégration
+
+1. Conserver les huit identifiants de région et l’accès aux fiches en 2D. Ajouter une action explicite « Play animation » dans la fiche Heart.
+2. Télécharger depuis la fiche auteur, consigner les crédits dans `docs/ASSET_CREDITS.md`, puis vérifier dans Blender que le GLB est autonome. Après simplification ou compression, vérifier la présence du clip, sa durée, son mouvement et son poids. Le cahier fixe un objectif de 2 Mo par modèle.
+3. Dans Three.js, lire les clips de `GLTFLoader` et jouer le clip voulu via `AnimationMixer`. Mettre en pause à la fermeture de la fiche ou au masquage de la page. Proposer un rendu fixe et un bouton pause. Éviter la lecture automatique avec mouvement réduit.
+4. Montrer un aperçu fixe en cas d’échec ou d’indisponibilité. Tester la fiche au clavier, sans WebGL et en mode hors ligne préparé. L’illustration est indépendante de la fréquence cardiaque du membre.
