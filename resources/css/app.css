@@ -1412,3 +1412,24 @@ h1, h2, h3, h4 { letter-spacing: 0; }
 .pv-frame { width: var(--w); max-width: calc(100vw - 32px); height: var(--h); max-height: calc(100vh - 110px); border: 10px solid #c4ddd5; border-radius: 30px; box-shadow: 0 40px 80px -40px rgba(23, 58, 56, 0.45); background: var(--bg); box-sizing: content-box; }
 .pv-frame.phone { border-radius: 44px; }
 @media (max-width: 900px) { .pv-formats { display: none; } }
+/* Today hero = mockup .hero: dark, image full-bleed under a left gradient, white Young Serif title */
+.today-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); min-height: 300px; border-radius: 26px; border: 0; overflow: hidden; isolation: isolate; color: #eaf6f2; background: #08161c; box-shadow: 0 30px 60px -36px rgba(8, 22, 28, 0.75), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.today-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(6, 18, 24, 0.86) 0%, rgba(6, 18, 24, 0.5) 48%, rgba(6, 18, 24, 0) 72%); }
+.today-window { position: absolute; inset: 0; z-index: -2; min-height: 0; background: #08161c; }
+.today-window img { object-position: 70% 50%; }
+.today-window figcaption { left: auto; right: 16px; bottom: 12px; }
+.today-copy { padding: 34px 38px; display: grid; gap: 10px; align-content: center; justify-items: start; }
+.today-copy .mission-kicker { color: #9ee6cf; font-size: 14.5px; font-weight: 500; margin: 0; }
+.today-copy h2 { color: #fff; margin: 0; }
+.today-copy > p { color: #b9d3cd; font-size: 14.5px; margin: 0 0 6px; }
+.today-copy .badge { background: rgba(255, 255, 255, 0.1); color: #d7f2ea; }
+.today-copy .btn-primary { background: #fff; color: var(--ink); border-color: #fff; }
+.today-copy .btn-primary:hover { background: var(--ecume); }
+.today-saved { color: #9ee6cf; }
+.today-saved a { color: #fff; }
+@media (max-width: 760px) {
+    .today-hero { grid-template-columns: 1fr; min-height: 340px; }
+    .today-window { order: 0; min-height: 0; }
+    .today-hero::after { background: linear-gradient(0deg, rgba(6, 18, 24, 0.9) 0%, rgba(6, 18, 24, 0.55) 60%, rgba(6, 18, 24, 0.15) 100%); }
+    .today-copy { padding: 26px 20px; align-content: end; }
+}
