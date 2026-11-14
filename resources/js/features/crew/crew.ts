@@ -13,6 +13,7 @@ import { registerActions } from '../../router-actions';
 import { app, cfg, me, ws } from '../../state';
 import { requestCard } from '../follow-up/followup';
 import { pendingSymptomReports, symptomSection } from '../symptoms/symptoms';
+import { medicalCard, medList, medsFor } from './medical';
 
 const FOLLOW_UPS: { label: string; measurement: string | null }[] = [
     { label: 'Clarify your sleep duration', measurement: 'sleep_main' },
@@ -143,7 +144,7 @@ export async function renderCrew(): Promise<Html> {
   <section class="card review-queue" aria-labelledby="queue-h">
       <div class="card-h"><div><span class="mission-kicker">On-board care</span><h2 id="queue-h">Review queue</h2></div>${badge(`${queue.filter(i => !i.waitingForCrew).length} ready for review`, 'info', 'review')}</div>
       <p class="hint">Open a case to see observations, the sleep trend and any photo. Follow-up responses return to the same file.</p>
-      ${queue.length ? html`<div class="review-list">${queue.map(i => html`<a class="review-row" href="${i.href}" data-link><span class="av">${repo.memberStatic(ws(),i.crewId).initials}</span><span><b>${repo.memberStatic(ws(),i.crewId).alias}</b><span>${i.reason}</span><small class="mono">${utcStamp(Date.parse(i.at))} · Day ${missionDay(Date.parse(i.at),c.epoch)}</small></span>${badge(i.status, i.waitingForCrew ? 'muted' : 'review', i.waitingForCrew ? 'clock' : 'review')}${icon('arrow','sm')}</a>`)}</div>` : html`<div class="empty-q">${icon('ok')}<p>No review waiting. New observations and crew replies appear here.</p></div>`}
+      ${queue.length ? html`<div class="review-list">${queue.map(i => html`<a class="review-row" href="${i.href}" data-link><span class="av">${repo.memberStatic(ws(),i.crewId).initials}</span><span><b>${repo.memberStatic(ws(),i.crewId).alias}</b><span>${i.reason}</span><small class="mono">${utcStamp(Date.parse(i.at))} · Day ${missionDay(Date.parse(i.at),c.epoch)}</small></span>${badge(i.status, i.waitingForCrew ? 'muted' : 'review', i.waitingForCrew ? 'clock' : 'review')}<span class="rr-act">${i.waitingForCrew ? 'Waiting for the crew' : i.status === 'Response received' ? 'Read the reply' : i.href.includes('symptom=') ? 'Look at the photo' : 'Review the evidence'}${icon('arrow','sm')}</span></a>`)}</div>` : html`<div class="empty-q">${icon('ok')}<p>No review waiting. New observations and crew replies appear here.</p></div>`}
     </section>
       ${houston}
     </div>
@@ -200,6 +201,10 @@ async function renderMember(crewId: string): Promise<Html> {
     <p class="crumbs"><a href="/crew" data-link>${icon('back')}Review queue</a></p>
     ${pageHead(m.alias, html`${m.title} · member file · Day ${day}`, html`<div class="head-tags">${simTag()}<a class="btn btn-ghost btn-small" href="/trends?member=${crewId}" data-link>${icon('trends')}Trends</a><a class="btn btn-ghost btn-small" href="/reports?member=${crewId}" data-link>${icon('report')}Report</a></div>`)}
 
+    <div class="grid-2 med-row">
+      ${medicalCard(crewId)}
+      <section class="card" aria-labelledby="medt-h"><div class="card-h"><h2 id="medt-h">Medications taken</h2><small>Logged by ${m.shortName}</small></div>${medList(await medsFor(crewId), 'Nothing logged by the crew member.')}</section>
+    </div>
     ${alerts.map((a) => {
         const ev = obs.filter((o) => a.evidenceIds.includes(o.id)).sort((x, y) => x.missionDay - y.missionDay);
         return html`<section class="card alert-card ${a.key === hlAlert ? 'req-hl' : ''} ${a.status === 'reviewed' ? 'is-reviewed' : ''}" aria-labelledby="al-${a.startDay}">
@@ -210,6 +215,16 @@ async function renderMember(crewId: string): Promise<Html> {
           <p class="fine">Context: drowsiness ${ev.map((o) => obs.find((x) => x.variable === 'drowsiness' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–9), mood ${ev.map((o) => obs.find((x) => x.variable === 'mood' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–5). Demo rule, not a clinical threshold. ${simTag()}</p>
           ${a.reviews.map((r) => html`<div class="req-answer"><b>Review · ${repo.memberStatic(ws(), r.byId).alias}</b> <span class="mono">${utcStamp(Date.parse(r.at))}</span><p>${r.note}</p>${r.requestId ? html`<small>Follow-up request sent.</small>` : ''}</div>`)}
           ${a.status === 'needs-review' ? html`
+          <details class="protocol" open>
+            <summary>${icon('review', 'sm')}What to do · on-board steps (demo protocol)</summary>
+            <ol>
+              <li><b>Check the nights.</b> Same method on each night (sleep diary)? A missing night stays missing.</li>
+              <li><b>Talk with ${m.shortName}.</b> Sleep station noise, light, workload, caffeine, worries, any symptom.</li>
+              <li><b>Decide on board.</b> Record your review; if useful, request a follow-up (blood pressure at rest, sleep clarification) or adjust the schedule.</li>
+              <li><b>Earth only if needed.</b> Generate a report and queue it for Houston. It leaves when the ground link is up.</li>
+            </ol>
+            <p class="fine">Demo guidance for the prototype, not a clinical protocol.</p>
+          </details>
           <form class="review-form" data-action="record-review" data-key="${a.key}" novalidate>
             <div class="field"><label for="review-note">Your review</label><textarea id="review-note" name="note" rows="2" maxlength="400" placeholder="e.g. Trend confirmed, noise near sleep station reported"></textarea><p class="error" id="note-err" hidden>${icon('review')}Write a short note to record the review.</p></div>
             <div class="field"><label for="review-fu">Request a follow-up (optional)</label><select id="review-fu" name="followup"><option value="">No follow-up</option>${FOLLOW_UPS.map((f, i) => html`<option value="${i}">${f.label}</option>`)}</select></div>

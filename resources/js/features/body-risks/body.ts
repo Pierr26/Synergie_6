@@ -226,7 +226,7 @@ export async function renderBody(): Promise<Html> {
         <div class="v3d-bar">${v3d}</div>
         <p class="fine v3d-credit">3D anatomy: <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noopener">HuBMAP Human Reference Atlas</a> reference bodies (Visible Human, Allen brain), CC BY 4.0, simplified for HEXTA. Motion is an illustration.</p>
         <ul class="region-list organ-chips" aria-label="Body regions">
-          ${REGIONS.map((r) => html`<li><a href="/body?region=${r.id}" data-link class="${r.id === region.id ? 'active' : ''}" ${r.id === region.id ? html`aria-current="true"` : ''}><b>${r.name}</b><small>${r.system}</small></a></li>`)}
+          ${REGIONS.map((r) => html`<li><a id="rg-${r.id}" href="/body?region=${r.id}" data-link class="${r.id === region.id ? 'active' : ''}" ${r.id === region.id ? html`aria-current="true"` : ''}><b>${r.name}</b><small>${r.system}</small></a></li>`)}
         </ul>
       </section>
 

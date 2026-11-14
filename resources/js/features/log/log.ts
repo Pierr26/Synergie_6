@@ -4,6 +4,7 @@ import * as repo from '../../data/repo';
 import { hhmm, missionDay } from '../../domain/time';
 import { html, type Html } from '../../lib/html';
 import { app, cfg, me, ws } from '../../state';
+import { medsFor, renderMedication } from '../crew/medical';
 
 interface LogChoice {
     href: string;
@@ -16,14 +17,15 @@ interface LogChoice {
 }
 
 /**
- * Log: the three ways an astronaut enters something. One card each, the one that is due comes first.
+ * Log: the four ways an astronaut enters something. One card each, the one that is due comes first.
  * Each card says what it is in plain words and how long it takes.
  */
 export async function renderLog(): Promise<Html> {
+    if (app.route.segments[1] === 'medication') return renderMedication();
     const c = cfg();
     const crewId = me();
     const day = missionDay(app.now, c.epoch);
-    const [task, ci, obs, symptoms] = await Promise.all([repo.todaysTask(ws(), crewId, app.now), repo.checkinFor(ws(), crewId, day), repo.observationsFor(ws(), crewId), repo.symptomReportsFor(ws(), crewId)]);
+    const [task, ci, obs, symptoms, meds] = await Promise.all([repo.todaysTask(ws(), crewId, app.now), repo.checkinFor(ws(), crewId, day), repo.observationsFor(ws(), crewId), repo.symptomReportsFor(ws(), crewId), medsFor(crewId)]);
     const saved = ci?.status === 'submitted';
     const due = !saved && !!task && (task.ev.state === 'due' || task.ev.state === 'snoozed');
     const today = obs.filter((o) => missionDay(Date.parse(o.measuredAt), c.epoch) === day && o.source !== 'simulated-sensor' && !o.variable.startsWith('sleep') && o.variable !== 'drowsiness');
@@ -53,6 +55,14 @@ export async function renderLog(): Promise<Html> {
             title: 'Report a symptom',
             what: 'Something you can see or feel: a photo and a few words for your medical officer.',
             status: openSym ? `${openSym} open with your medical officer` : 'Only when you need it',
+            tone: 'idle',
+        },
+        {
+            href: '/log/medication',
+            img: 'done',
+            title: 'Medication taken',
+            what: 'Which one, when and why. Your medical officer keeps track of it on board.',
+            status: meds.filter((m) => missionDay(Date.parse(m.at), c.epoch) === day).length ? `${meds.filter((m) => missionDay(Date.parse(m.at), c.epoch) === day).length} today` : 'Only when you take one',
             tone: 'idle',
         },
     ];

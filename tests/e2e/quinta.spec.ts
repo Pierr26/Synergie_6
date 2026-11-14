@@ -15,10 +15,14 @@ async function step(page: Page, n: number) {
 /** Save the check-in as a user would: "Save now" on an early step, else the last step's "Save check-in". */
 async function saveCheckin(page: Page) {
     const now = page.getByRole('button', { name: 'Save now', exact: true });
-    if (await now.isVisible()) return now.click();
     const save = page.getByRole('button', { name: 'Save check-in', exact: true });
-    if (!(await save.isVisible())) await step(page, 3);
-    await save.click();
+    // a background refresh can swallow a click: retry until one of the save buttons is reached
+    await expect(async () => {
+        if (await save.isVisible()) return save.click({ timeout: 2000 });
+        if (await now.isVisible()) return now.click({ timeout: 2000 });
+        await step(page, 3);
+        throw new Error('save button not reached yet');
+    }).toPass({ timeout: 20000 });
 }
 
 

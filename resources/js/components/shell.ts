@@ -34,7 +34,7 @@ export function navItems(badges: Record<string, number> = {}): NavItem[] {
     // astronaut: four places only. Help stays one tap away in the header.
     return [
         { href: '/overview', label: 'Today', ic: 'home', match: ['overview', ''] },
-        { href: '/log', label: 'Log', ic: 'checkin', match: ['log', 'check-in', 'measurements'], badge: badges.checkin },
+        { href: '/log', label: 'Log', ic: 'checkin', match: ['log', 'check-in', 'measurements', 'symptoms'], badge: badges.checkin },
         { href: '/trends', label: 'My health', ic: 'trends', match: ['trends', 'body'] },
         { href: '/follow-up', label: 'Messages', ic: 'followup', match: ['follow-up'], badge: badges.followup },
     ];
@@ -134,6 +134,7 @@ export async function renderShell(view: Html): Promise<Html> {
           </div>
         </header>
         ${app.route.segments[0] === 'overview' ? '' : banner}
+        ${subTabs()}
         <main id="main" tabindex="-1" class="view">${view}</main>
         <p class="disclaimer">HEXTA · Synergy 5 research prototype for the NASA Space Apps Challenge 2026. Simulated data and demo rules, no clinical validation, not affiliated with NASA. <a href="/help#credits" data-link>Sources and credits</a></p>
         <nav class="tabbar" aria-label="Main navigation">
@@ -196,6 +197,29 @@ export async function previewBar(): Promise<Html> {
         ${(Object.keys(VIEWPORT_LABEL) as Viewport[]).map((v) => html`<button type="button" data-action="viewport" data-viewport="${v}" aria-pressed="${app.viewport === v}">${VIEWPORT_LABEL[v]}</button>`)}
       </div>
     </div>`;
+}
+
+/** Second level of navigation inside a section, so every screen is one tap away without a heavy menu. */
+function subTabs(): Html {
+    if (app.role !== 'astronaut') return html``;
+    const seg = app.route.segments[0] ?? '';
+    const sub = app.route.segments[1] ?? '';
+    const groups: Record<string, { href: string; label: string; on: boolean }[]> = {
+        health: [
+            { href: '/trends', label: 'Trends', on: seg === 'trends' },
+            { href: '/body', label: 'Body & Risks', on: seg === 'body' },
+        ],
+        log: [
+            { href: '/log', label: 'All', on: seg === 'log' && !sub },
+            { href: '/check-in', label: 'Check-in', on: seg === 'check-in' },
+            { href: '/measurements', label: 'Measurement', on: seg === 'measurements' },
+            { href: '/symptoms', label: 'Symptom', on: seg === 'symptoms' },
+            { href: '/log/medication', label: 'Medication', on: seg === 'log' && sub === 'medication' },
+        ],
+    };
+    const g = ['trends', 'body'].includes(seg) ? groups.health : ['log', 'check-in', 'measurements', 'symptoms'].includes(seg) ? groups.log : null;
+    if (!g) return html``;
+    return html`<nav class="sub-tabs" aria-label="In this section">${g.map((t) => html`<a href="${t.href}" data-link ${t.on ? html`aria-current="page"` : ''}>${t.label}</a>`)}</nav>`;
 }
 
 async function reminderBanner(): Promise<Html> {
