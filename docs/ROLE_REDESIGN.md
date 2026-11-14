@@ -2,7 +2,7 @@
 
 ## Versions et retour arrière
 
-- Dossier de référence Claude : `/home/marius/NASA/QUINTA`, branche `main`, inchangé après sauvegarde (hors `.gitignore` renforcé avant le premier commit).
+- Dossier source au début : `/home/marius/NASA/QUINTA`. La sauvegarde a été créée sur `main` après renforcement de `.gitignore`. Au dernier contrôle, une activité extérieure à cette refonte a placé ce dossier sur `feat/guided-roles` avec des modifications locales ; elles n’ont été ni reprises, ni écrasées. Utiliser le tag pour retrouver la référence exacte.
 - SHA de sauvegarde : `7bb5f444a23ba92aca249fa08fea4ae436bff5ec`.
 - Tag annoté : `quinta-before-role-redesign` ; objet tag `ec1f5abeb7b8c626a8f161fd08ecd14c7bff310a`.
 - Worktree de refonte : `/home/marius/NASA/QUINTA-role-redesign`.
@@ -15,7 +15,7 @@ Rouvrir l’ancienne version dans un autre dossier :
 git -C /home/marius/NASA/QUINTA worktree add --detach /home/marius/NASA/QUINTA-before quinta-before-role-redesign
 ```
 
-Ce worktree contient le code, pas les données du navigateur, les dépendances ni `.env`. Pour le lancer : installer les dépendances, créer son environnement local et sa propre base selon le README sauvegardé. Le dossier original conserve déjà son environnement fonctionnel de référence.
+Ce worktree contient le code, pas les données du navigateur, les dépendances ni `.env`. Pour le lancer : installer les dépendances, créer son environnement local et sa propre base selon le README sauvegardé. Le dossier original conserve son environnement local, mais son code courant évolue désormais indépendamment ; il ne doit plus être considéré comme une référence figée.
 
 La branche et le tag Claude ont été poussés lors de la demande intermédiaire. La consigne ultérieure « laisse GitHub » a arrêté les opérations distantes ; la refonte reste locale. Aucune pull request n’a été créée.
 
