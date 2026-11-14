@@ -328,6 +328,14 @@ registerActions({
         await render(true);
     },
     'rail-toggle': async () => {
+        // tablet widths (700–1099 px) always show the icon rail: the logo opens the full menu over the content
+        if (innerWidth >= 700 && innerWidth < 1100) {
+            const shell = root.querySelector<HTMLElement>('.app');
+            const open = !shell?.classList.contains('drawer');
+            shell?.classList.toggle('drawer', open);
+            root.querySelector('.brand-toggle')?.setAttribute('aria-expanded', String(open));
+            return;
+        }
         app.rail = !app.rail;
         writePref('hexta.rail', app.rail ? '1' : '0');
         // fold in place (not a re-render) so the grid width and the labels can animate
@@ -460,3 +468,18 @@ if (root) void boot().catch((err) => {
 });
 
 if (!root && document.querySelector('.account-app')) void import('./features/account-drafts').then(m => m.mountAccountDrafts());
+
+/** Tablet menu drawer: closes on Escape or a click outside the sidebar. */
+function closeDrawer(): void {
+    const shell = root.querySelector<HTMLElement>('.app.drawer');
+    if (!shell) return;
+    shell.classList.remove('drawer');
+    root.querySelector('.brand-toggle')?.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+});
+document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest('.side') || t.closest('.sb-item, .sb-today')) closeDrawer();
+}, true);

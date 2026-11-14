@@ -1617,3 +1617,17 @@ details.protocol ol { margin: 10px 0 4px; padding-left: 1.3em; display: grid; ga
     .ci-grid > .stepper .step small { display: none; }
     .ci-grid > .stepper .step .n { width: 24px; height: 24px; }
 }
+/* tablet (700–1099 px): the logo opens the full menu as a drawer over the content */
+@media (min-width: 700px) and (max-width: 1099px) {
+    .app.drawer .side { position: fixed; left: 0; top: 0; z-index: 60; width: 248px; height: 100vh; padding: 16px 14px; align-items: stretch; background: var(--card); border-right: 1px solid var(--line); box-shadow: 0 30px 60px -20px rgba(23, 58, 56, 0.45); animation: drawerIn 0.28s cubic-bezier(0.2, 0.7, 0.2, 1); }
+    .app.drawer .brand-toggle { justify-content: flex-start; padding: 4px 8px 14px; }
+    .app.drawer .brand-toggle b, .app.drawer .sb-group, .app.drawer .sb-lbl { display: inline; }
+    .app.drawer .sb-today > span:last-child, .app.drawer .side-foot { display: block; }
+    .app.drawer .sb-today { padding: 12px; border-radius: 16px; background: linear-gradient(135deg, #e3f4ee, #f4faf8); border: 1px solid #d3eae2; }
+    .app.drawer .sb-item { justify-content: flex-start; width: auto; height: auto; min-height: 44px; padding: 0 12px; }
+    .app.drawer .sb-badge { position: static; width: auto; height: auto; padding: 1px 7px; font-size: 12px; }
+    .app.drawer::after { content: ''; position: fixed; inset: 0; z-index: 55; background: rgba(23, 58, 56, 0.28); }
+    :root.night .app.drawer .sb-today { background: var(--ecume); border-color: var(--line); }
+}
+@keyframes drawerIn { from { transform: translateX(-24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .app.drawer .side { animation: none; } }
