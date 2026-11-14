@@ -8,6 +8,17 @@ import { app, me, writePref, ws } from '../../state';
 import { HAZARDS, REGIONS, regionById, SOURCES, type RegionId } from './content';
 
 let viewer: import('./body3d').Viewer | null = null;
+/** Detailed organ per region (Z-Anatomy, CC BY-SA 4.0). */
+const ORGAN: Record<RegionId, { file: string; label: string }> = {
+    brain: { file: 'brain', label: 'Brain: cerebrum, cerebellum and brainstem' },
+    eyes: { file: 'eye', label: 'Right eye: sclera, cornea, iris, lens and optic nerve' },
+    'inner-ear': { file: 'inner-ear', label: 'Inner ear: cochlea and semicircular canals' },
+    heart: { file: 'heart', label: 'Heart: chambers, valves and great vessels' },
+    lungs: { file: 'lungs', label: 'Lungs: five lobes' },
+    kidneys: { file: 'kidney', label: 'Kidneys, renal pelvis and ureters' },
+    bones: { file: 'femur', label: 'Right femur, the bone that loses most density in microgravity' },
+    'leg-muscles': { file: 'leg-muscles', label: 'Right leg muscles: calf and thigh' },
+};
 let viewerState: 'off' | 'loading' | 'on' | 'failed' = 'off';
 let failReason = '';
 /** Body & Risks is 3D only: the anatomy model opens as soon as the page mounts. */
@@ -136,6 +147,11 @@ registerActions({
         toast('Crew review requested. Your CMO was notified on board.');
         await bus.refresh();
     },
+    'mount:organ3d': async (el) => {
+        const { mountOrgan } = await import('./organ3d');
+        const ok = await mountOrgan(el, el.dataset.src!);
+        if (!ok) el.dataset.state = 'failed';
+    },
     'mount:body': (el) => {
         // the viewer owns its canvas; re-attach it to the freshly rendered host
         if (viewer && viewerState === 'on') {
@@ -216,6 +232,13 @@ export async function renderBody(): Promise<Html> {
 
       <article class="card risk-sheet" aria-labelledby="sheet-h" id="sheet">
         <div class="organ-h"><div><h2 id="sheet-h">${region.name}</h2><span class="sys">${region.system} · ${region.hazards.map((h) => HAZARDS.find((x) => x.id === h)!.name).join(' · ')}</span></div></div>
+        <figure class="organ3d-fig">
+          <div class="organ3d" data-mount="organ3d" data-src="/assets/models/organs/${ORGAN[region.id].file}.glb" role="img" aria-label="3D model. ${ORGAN[region.id].label}. Drag to turn, pinch or scroll to zoom." data-state="loading">
+            <span class="organ3d-wait">Loading the 3D organ…</span>
+            <span class="organ3d-fail">3D is not available on this device.</span>
+          </div>
+          <figcaption>${ORGAN[region.id].label} · drag to turn · <a href="https://www.z-anatomy.com" target="_blank" rel="noopener">Z-Anatomy</a>, CC BY-SA 4.0</figcaption>
+        </figure>
         <h3>Why this matters</h3>
         <p>${region.why}</p>
         <h3>What HEXTA records</h3>

@@ -1,5 +1,27 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** Entry screen: guided demo is the default mode; pick a role card. */
+async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
+    await page.goto('/');
+    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
+    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+}
+
+/** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */
+async function step(page: Page, n: number) {
+    await page.locator('.stepper .step').nth(n).click();
+}
+
+/** Save the check-in as a user would: "Save now" on an early step, else the last step's "Save check-in". */
+async function saveCheckin(page: Page) {
+    const now = page.getByRole('button', { name: 'Save now', exact: true });
+    if (await now.isVisible()) return now.click();
+    const save = page.getByRole('button', { name: 'Save check-in', exact: true });
+    if (!(await save.isVisible())) await step(page, 3);
+    await save.click();
+}
+
+
 const shot = (page: Page, name: string) => page.screenshot({ path: `docs/screenshots/role-redesign/${test.info().project.name}/${name}.png`, fullPage: true });
 const isMobile = () => test.info().project.name.startsWith('mobile');
 
@@ -13,19 +35,17 @@ test.beforeEach(async ({ context }) => {
 });
 
 async function startDemo(page: Page) {
-    await page.goto('/');
-    await page.getByRole('button', { name: /Start demo/ }).click();
+    await enterAs(page, 'astronaut');
     await expect(page.locator('#page-title')).toHaveText('Today');
 }
 
 async function startExplore(page: Page) {
-    await page.goto('/');
-    await page.getByRole('button', { name: /Explore app/ }).click();
+    await enterAs(page, 'astronaut', 'explore');
     await expect(page.locator('#page-title')).toHaveText('Today');
 }
 
 async function role(page: Page, r: 'Astronaut' | 'CMO') {
-    await page.getByRole('group', { name: 'Role on board' }).getByRole('button', { name: new RegExp(r) }).click();
+    await page.getByRole('group', { name: 'Role' }).getByRole('button', { name: new RegExp(r) }).click();
 }
 
 async function nav(page: Page, name: string) {
@@ -60,7 +80,7 @@ test('V09 + M03 · Today has one next step; snooze, saved summary and pending re
     await expect(page.locator('.review-queue')).toContainText('No review waiting');
     await role(page, 'Astronaut');
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in', exact: true }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toHaveText('Saved on this device');
     await expect(page.locator('section.priority.tone-review')).toContainText('Crew review pending');
     await shot(page, '04-checkin-saved-alert');
@@ -78,7 +98,7 @@ test('V02 · Day 138 has no alert; a fourth night does not duplicate the episode
     await page.goto('/check-in');
     await expect(page.locator('#sleepHours')).toHaveValue('6');
     await expect(page.locator('#sleepMinutes')).toHaveValue('24');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Sleep trend needs review' })).toHaveCount(0);
 
@@ -86,15 +106,17 @@ test('V02 · Day 138 has no alert; a fourth night does not duplicate the episode
     await scenario(page, 'Replay Day 142');
     await expect(page.locator('.mission .day')).toContainText('Day 142');
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.getByRole('heading', { name: 'Sleep trend needs review' })).toBeVisible();
     await scenario(page, 'Next day 07:00');
     await expect(page.locator('.mission .day')).toContainText('Day 143');
     await page.goto('/check-in');
+    await step(page, 0);
     await page.locator('#sleepHours').fill('5');
     await page.locator('#sleepMinutes').fill('0');
+    await step(page, 1);
     await page.locator('label.scale-opt').filter({ hasText: /^7/ }).first().click();
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toBeVisible();
     await role(page, 'CMO');
     await page.goto('/notifications');
@@ -105,17 +127,20 @@ test('V01 · confirmed zero vs not recorded, draft reload', async ({ page }) => 
     await startDemo(page);
     await scenario(page, 'Advance 1 minute');
     await page.goto('/check-in');
+    await step(page, 0);
     await page.locator('#sleepHours').fill('0');
     await page.locator('#sleepMinutes').fill('0');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#err-sleep')).toContainText('confirm a zero');
+    await step(page, 0);
     await page.getByLabel('I slept 0 minutes (confirm a zero)').check();
     await expect(page.locator('#draft-status')).toContainText('Draft saved');
     await page.waitForTimeout(300);
     await page.reload();
     await expect(page.locator('#sleepHours')).toHaveValue('0');
+    await step(page, 0);
     await page.getByLabel('I slept 0 minutes (confirm a zero)').check();
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('.summary')).toContainText('0 min (zero confirmed)');
 });
 
@@ -123,7 +148,7 @@ test('M04 + M09 + M15 · CMO opens the notification, records a review, astronaut
     await startDemo(page);
     await scenario(page, 'Advance 1 minute');
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toBeVisible();
 
     await role(page, 'CMO');
@@ -154,7 +179,7 @@ test('M04 + M09 + M15 · CMO opens the notification, records a review, astronaut
     await expect(page.locator('.timeline')).toContainText('Trend confirmed');
 
     await role(page, 'CMO');
-    await expect(page.locator('.todo')).toContainText('Follow-up completed');
+    await expect(page.locator('.review-queue')).toContainText('Response received');
 });
 
 test('M11 + M06 + V05 · two reports, queue offline, lost receipt, retry keeps the same ID', async ({ page }) => {
@@ -214,8 +239,8 @@ test('V12 · manual review request in Explore reaches the CMO without any ground
     await page.getByRole('button', { name: 'Request crew review' }).click();
     await expect(page.locator('#open-h + article')).toContainText('Crew review pending');
     await role(page, 'CMO');
-    await expect(page.locator('.todo')).toContainText('Crew review requested');
-    await expect(page.locator('.todo')).not.toContainText('Sleep trend needs review');
+    await expect(page.locator('.review-queue')).toContainText('Crew review requested');
+    await expect(page.locator('.review-queue')).not.toContainText('Sleep trend needs review');
     await page.goto('/reports');
     await expect(page.getByText('No report yet.')).toBeVisible();
 });
@@ -235,13 +260,13 @@ test('V11 · spot measurements: pair check, SpO₂ range, separate temperature s
     await expect(page.locator('.legend')).toContainText('oral');
     await expect(page.locator('.legend')).toContainText('skin');
     await page.goto('/trends?metric=glucose');
-    await expect(page.locator('.legend li')).toHaveCount(3); // capillary, plasma, hollow-marker note
+    await expect(page.locator('.legend li')).toHaveCount(2); // capillary and plasma: separate series
 });
 
 test('M02 · Trends: chart and table agree, gaps and personal reference visible', async ({ page }) => {
     await startDemo(page);
     await page.goto('/trends?metric=sleep_main&period=14');
-    await expect(page.locator('.insight')).toContainText('personal reference');
+    await expect(page.locator('.tiles')).toContainText('Your usual');
     await expect(page.locator('.legend')).toContainText('sleep-diary');
     await expect(page.locator('.legend')).toContainText('actigraphy');
     await expect(page.locator('tbody tr.row-gap')).toContainText(['Day 142']);
@@ -261,16 +286,14 @@ test('M07 + M08 · Body & Risks works without WebGL and by keyboard', async ({ p
     await startDemo(page);
     await page.goto('/body?region=heart');
     await expect(page.getByRole('heading', { name: 'Heart', level: 2 })).toBeVisible();
-    // 2D comes first; WebGL is attempted only when explicitly requested.
-    await page.getByRole('button', { name: 'View in 3D' }).click();
+    // 3D only: without WebGL the page says so and the region list and sheets stay usable
     await expect(page.getByText(/WebGL is not available on this device/)).toBeVisible();
-    await expect(page.locator('.figure2d')).toBeVisible();
     await page.locator('.region-list a').first().focus();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { name: 'Eyes', level: 2 })).toBeVisible();
     await expect(page.locator('.hazards li')).toHaveCount(5);
-    await shot(page, '10-body-2d');
+    await shot(page, '10-body-no-webgl');
 });
 
 test('M10 + V07 · first-access guide: skip, then reopen from Help', async ({ page, context }) => {
@@ -282,7 +305,7 @@ test('M10 + V07 · first-access guide: skip, then reopen from Help', async ({ pa
         localStorage.removeItem('quinta.guide.astronaut');
         sessionStorage.setItem('keep-guides', '1');
     });
-    await page.getByRole('button', { name: /Start demo/ }).click();
+    await page.locator('.role-card[data-role="astronaut"]').click();
     const dlg = page.getByRole('dialog');
     await expect(dlg).toContainText('Your daily check-in');
     await dlg.getByRole('button', { name: 'Skip guide' }).click();
@@ -303,9 +326,9 @@ async function scenario(page: Page, label: string) {
 
 test('Sleep follow-up opens the requested field and preserves its correction draft offline', async ({ page, context }) => {
     await startDemo(page);
-    await expect(page.getByText('Ready offline')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('.st-menu summary')).toContainText('All set', { timeout: 30000 });
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in', exact: true }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toBeVisible();
     await role(page, 'CMO');
     await page.goto('/crew/moreau');
@@ -316,6 +339,7 @@ test('Sleep follow-up opens the requested field and preserves its correction dra
     await page.getByRole('link', { name: 'Respond to follow-up', exact: true }).click();
     await page.locator('.req a[href^="/check-in?request="]').click();
     await expect(page.locator('.notice')).toContainText('exclude naps');
+    await step(page, 0);
     await page.locator('#sleepHours').fill('6');
     await page.locator('#sleepMinutes').fill('30');
     await expect(page.locator('#draft-status')).toContainText('Draft saved on this device');
@@ -324,7 +348,7 @@ test('Sleep follow-up opens the requested field and preserves its correction dra
     await expect(page.locator('#sleepHours')).toHaveValue('6');
     await expect(page.locator('#sleepMinutes')).toHaveValue('30');
     await shot(page, '20-followup-correction-offline');
-    await page.getByRole('button', { name: 'Save check-in', exact: true }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toBeVisible();
     await role(page, 'CMO');
     await expect(page.locator('.review-queue')).toContainText('Response received');

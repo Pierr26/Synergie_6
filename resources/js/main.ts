@@ -137,9 +137,12 @@ export async function render(isNavigation = false): Promise<void> {
         const view = await viewHtml();
         const html = (await renderShell(view)).value;
         const edits = isNavigation ? null : captureEdits();
+        // a background refresh must not close a menu or panel the user has open (scenario controls, status, guide)
+        const openPanels = isNavigation ? [] : [...root.querySelectorAll<HTMLDetailsElement>('details[open]')].map((d) => d.className).filter(Boolean);
         await withTransition(() => {
             root.innerHTML = html;
             if (edits) restoreEdits(edits);
+            for (const cls of openPanels) root.querySelector<HTMLDetailsElement>(`details[class="${cls}"]`)?.setAttribute('open', '');
         }, isNavigation);
         root.removeAttribute('data-booting');
         const title = root.querySelector('#page-title')?.textContent;

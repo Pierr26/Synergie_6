@@ -333,7 +333,7 @@ export async function renderCheckin(): Promise<Html> {
         <span class="ci-spacer"></span>
         ${step < 3
             ? html`${sleepDone && drowsyDone ? html`<button type="submit" class="btn btn-quiet" data-save="1">Save now</button>` : ''}<button type="button" class="btn btn-primary" data-action="ci-step" data-to="${step + 1}">${step === 2 ? 'Review' : 'Continue'}${icon('arrow', 'sm')}</button>`
-            : html`<button type="button" class="btn btn-quiet" data-action="checkin-draft">Save draft</button><button type="submit" class="btn btn-primary" data-save="1">${icon('ok')}Save check-in</button>`}
+            : html`${task && task.ev.state === 'due' && task.ev.canSnooze ? html`<button type="button" class="btn btn-quiet" data-action="snooze">Snooze 30 min</button>` : ''}<button type="button" class="btn btn-quiet" data-action="checkin-draft">Save draft</button><button type="submit" class="btn btn-primary" data-save="1">${icon('ok')}Save check-in</button>`}
       </div>
     </form>
     </div>`;

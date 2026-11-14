@@ -124,7 +124,7 @@ export async function renderShell(view: Html): Promise<Html> {
           </div>
           <div class="status-strip">
             <button type="button" class="chip ${app.groundLink ? '' : 'off'}" data-action="toggle-link" aria-pressed="${app.groundLink}" title="Simulated ground link. Select to cut or restore it. ${app.browserOnline ? 'Device online' : 'Device offline'} · ${app.offlineReady ? 'ready offline' : 'preparing offline'}.">
-              <span class="link ${app.groundLink ? '' : 'off'}"><span class="pulse"></span></span><span>${app.groundLink ? html`Ground <b>connected</b>` : html`Ground <b>offline</b>`}</span>
+              <span class="link ${app.groundLink ? '' : 'off'}"><span class="pulse"></span></span><span>${app.groundLink ? html`Ground link <b>connected</b>` : html`Ground link <b>offline</b>`}</span>
             </button>
             ${statusMenu(queueSummary, counts.retry ?? 0)}
             <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><span class="pal-l">Go to</span></button>

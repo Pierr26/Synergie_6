@@ -1574,3 +1574,14 @@ button.step:focus-visible { outline: 3px solid var(--lagon); outline-offset: 1px
 .coach-why { color: var(--ink2); }
 :root.night .coach-slim .coach-steps.pop-panel { background: var(--card); }
 .entry-top .entry-logo { width: 96px; height: auto; overflow: visible; }
+.preview { position: relative; z-index: 20; }
+/* detailed organ (Z-Anatomy) in the risk sheet */
+.organ3d-fig { margin: 4px 0 14px; }
+.organ3d { position: relative; height: 260px; border-radius: 18px; overflow: hidden; background: radial-gradient(70% 62% at 50% 42%, #ffffff 0%, #eaf4f0 60%, #d9e9e3 100%); border: 1px solid var(--line); touch-action: none; cursor: grab; }
+.organ3d:active { cursor: grabbing; }
+.organ3d-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
+.organ3d-wait, .organ3d-fail { position: absolute; inset: 0; display: none; place-items: center; font-size: 13px; color: var(--muted); }
+.organ3d[data-state='loading'] .organ3d-wait, .organ3d[data-state='failed'] .organ3d-fail { display: grid; }
+.organ3d-fig figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+:root.night .organ3d { background: radial-gradient(70% 62% at 50% 42%, #3a3049 0%, #2a2338 60%, #1e1929 100%); border-color: var(--line); }
+@media (max-width: 699px) { .organ3d { height: 220px; } }

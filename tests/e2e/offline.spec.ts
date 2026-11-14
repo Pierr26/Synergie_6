@@ -1,5 +1,27 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** Entry screen: guided demo is the default mode; pick a role card. */
+async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
+    await page.goto('/');
+    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
+    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+}
+
+/** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */
+async function step(page: Page, n: number) {
+    await page.locator('.stepper .step').nth(n).click();
+}
+
+/** Save the check-in as a user would: "Save now" on an early step, else the last step's "Save check-in". */
+async function saveCheckin(page: Page) {
+    const now = page.getByRole('button', { name: 'Save now', exact: true });
+    if (await now.isVisible()) return now.click();
+    const save = page.getByRole('button', { name: 'Save check-in', exact: true });
+    if (!(await save.isVisible())) await step(page, 3);
+    await save.click();
+}
+
+
 /**
  * M05 / V05 · offline after preparation, served from the same origin as Laravel.
  * Prepare online (service worker precache), cut the browser network, reload an internal view,
@@ -11,9 +33,8 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
         localStorage.setItem('quinta.guide.astronaut', 'done');
         localStorage.setItem('quinta.guide.cmo', 'done');
     });
-    await page.goto('/');
-    await page.getByRole('button', { name: /Start demo/ }).click();
-    await expect(page.getByText('Ready offline')).toBeVisible({ timeout: 30000 });
+    await enterAs(page, 'astronaut');
+    await expect(page.locator('.st-menu summary')).toContainText('All set', { timeout: 30000 });
     await page.reload(); // page now controlled by the service worker
 
     await context.setOffline(true);
@@ -23,10 +44,10 @@ test('M05 · reload offline on an internal view, keep working, data survives a c
 
     await scenario(page, 'Advance 1 minute');
     await page.goto('/check-in');
-    await page.getByRole('button', { name: 'Save check-in' }).click();
+    await saveCheckin(page);
     await expect(page.locator('#saved-h')).toHaveText('Saved on this device');
 
-    await page.getByRole('group', { name: 'Role on board' }).getByRole('button', { name: /CMO/ }).click();
+    await page.getByRole('group', { name: 'Role' }).getByRole('button', { name: /CMO/ }).click();
     await page.goto('/crew/moreau');
     await page.getByLabel('Your review').fill('Reviewed offline');
     await page.getByRole('button', { name: 'Record review' }).click();
