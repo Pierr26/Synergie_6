@@ -31,7 +31,7 @@ Earlier iterations (kit mannequin with an original heart, then a BodyParts3D bui
 
 ## Symptom photos
 
-Photos attached to a symptom report are user content stored in IndexedDB only (never in `public/`, the service worker cache or a ground report). The demo offers a **simulated image** drawn in the browser (labelled "SIMULATED IMAGE", not a real person).
+Photos attached to a symptom report are user content stored in IndexedDB only (never in `public/`, the service worker cache or a ground report). The demo offers `public/assets/illustrations/simulated-skin-mark.webp` (20 kB), generated with the built-in ImageGen tool on 2026-11-14. It depicts a synthetic training mannequin, with the visible label "SIMULATED IMAGE · NOT A REAL PERSON". It replaces the old canvas drawing. The final prompt and integration decisions are recorded in `docs/ROLE_REDESIGN.md`. Connected account attachments are stored privately on the onboard Laravel server, behind the account’s mission and record authorization; they are excluded from report snapshots.
 
 ## Data
 

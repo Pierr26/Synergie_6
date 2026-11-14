@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 /** "Report a symptom": capture on this device (also offline), onboard review, feedback in Follow-up. */
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFklEQVR4nGP8z4AdMOEQH5UYrBIAVbwBD1vk9kUAAAAASUVORK5CYII=', 'base64');
 const photo = (name = 'arm.png') => ({ name, mimeType: 'image/png', buffer: PNG });
-const shot = (page: Page, name: string) => page.screenshot({ path: `docs/screenshots/${test.info().project.name}/${name}.png`, fullPage: true });
+const shot = (page: Page, name: string) => page.screenshot({ path: `docs/screenshots/role-redesign/${test.info().project.name}/${name}.png`, fullPage: true });
 
 test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => {
@@ -17,7 +17,7 @@ test.beforeEach(async ({ context }) => {
 async function startDemo(page: Page) {
     await page.goto('/');
     await page.getByRole('button', { name: /Start demo/ }).click();
-    await expect(page.locator('#page-title')).toHaveText('Overview');
+    await expect(page.locator('#page-title')).toHaveText('Today');
 }
 
 const role = (page: Page, r: 'Astronaut' | 'CMO') => page.getByRole('group', { name: 'Role on board' }).getByRole('button', { name: new RegExp(r) }).click();
@@ -56,7 +56,7 @@ test('Symptom report · photo draft survives an offline reload, CMO reviews it i
 
     await expect(page.locator('#page-title')).toHaveText('Follow-up');
     const mine = page.locator('#symptoms .sym').first();
-    await expect(mine).toContainText('Submitted for onboard review');
+    await expect(mine).toContainText('Crew review pending');
     await expect(mine).toContainText('Left arm');
     await loaded(page, '#symptoms .sym-photo img');
     await shot(page, '15-symptom-astronaut-submitted');
@@ -144,7 +144,7 @@ test('Symptom report · description only, replace and remove the photo, invalid 
     await page.getByRole('button', { name: 'Submit for onboard review' }).click();
     await expect(page.locator('#page-title')).toHaveText('Follow-up');
     const mine = page.locator('#symptoms .sym').first();
-    await expect(mine).toContainText('Submitted for onboard review');
+    await expect(mine).toContainText('Crew review pending');
     await expect(mine).toContainText('No photo · description only');
 
     await role(page, 'CMO');
