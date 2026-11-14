@@ -88,7 +88,6 @@ export function medList(list: MedIntake[], empty: string): Html {
 export async function renderMedication(): Promise<Html> {
     const list = await medsFor(me());
     return html`
-    <p class="crumbs"><a href="/log" data-link>${icon('back')}Log</a></p>
     <div class="grid-2">
       <form class="card med-form" data-action="med-add" novalidate aria-labelledby="med-h">
         <h2 id="med-h">I took a medication</h2>

@@ -4,7 +4,7 @@
  * derived from BodyParts3D) with Blender, one organ per file, simplified for offline use.
  * Loaded only when a region is opened; one viewer at a time, its canvas re-attached on re-render.
  */
-import { ACESFilmicToneMapping, Box3, DirectionalLight, HemisphereLight, PerspectiveCamera, PMREMGenerator, Scene, SRGBColorSpace, Vector3, WebGLRenderer, type Object3D } from 'three';
+import { ACESFilmicToneMapping, Box3, DirectionalLight, HemisphereLight, PerspectiveCamera, PMREMGenerator, Scene, SRGBColorSpace, Vector3, WebGLRenderer, type Mesh, type MeshStandardMaterial, type Object3D } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -29,6 +29,49 @@ function load(src: string): Promise<Object3D> {
     return cache.get(src)!;
 }
 
+/**
+ * Z-Anatomy colours its tissues in Blender's viewport, which glTF does not carry: the export keeps
+ * the tissue name on each material (Bone, Tendon, Organ…). Give each tissue its usual atlas colour.
+ */
+const TISSUE: [RegExp, number][] = [
+    [/text/i, -1],
+    [/bone|ossicle|femur/i, 0xeee3cc],
+    [/cartilage/i, 0xcfe3e6],
+    [/tendon|ligament|fascia|retinacul/i, 0xe9dfc9],
+    [/flexion|extension|abduct|adduct|rotat|muscle|trapezius|myocard/i, 0xb2483f],
+    [/lung/i, 0xdf9a8f],
+    [/white matter/i, 0xeee6dc],
+    [/lcr|ventricle|csf/i, 0x8fd4cb],
+    [/nucleus|grey|gray/i, 0xb07a63],
+    [/lobe|cortex|gyrus|cerebell|brain/i, 0xe7b9ac],
+    [/ductus|ureter|pelvis/i, 0xe3cf7c],
+    [/organ|kidney/i, 0xa9463c],
+    [/eye|sclera/i, 0xf3efe8],
+    [/artery|aorta/i, 0xc23b32],
+    [/vein|cava/i, 0x3f6fa8],
+    [/nerve/i, 0xe8cf5a],
+];
+
+function paint(obj: Object3D): void {
+    const hide: Object3D[] = [];
+    obj.traverse((o) => {
+        const mesh = o as Mesh;
+        if (!mesh.isMesh) return;
+        if (/\.t$/.test(o.name)) return void hide.push(o);
+        const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as MeshStandardMaterial[];
+        for (const m of mats) {
+            const c = m.color;
+            const plain = !c || (c.r > 0.85 && c.g > 0.85 && c.b > 0.85);
+            const rule = TISSUE.find(([re]) => re.test(m.name) || (plain && re.test(o.name)));
+            if (rule?.[1] === -1) hide.push(o);
+            else if (rule && plain) c.setHex(rule[1]);
+            m.roughness = 0.62;
+            m.metalness = 0;
+        }
+    });
+    hide.forEach((h) => h.removeFromParent());
+}
+
 function frame(view: OrganView, obj: Object3D): void {
     const box = new Box3().setFromObject(obj);
     const size = box.getSize(new Vector3());
@@ -37,7 +80,7 @@ function frame(view: OrganView, obj: Object3D): void {
     const r = Math.max(size.x, size.y, size.z) || 1;
     view.camera.near = r / 100;
     view.camera.far = r * 20;
-    view.camera.position.set(0, r * 0.15, r * 1.9);
+    view.camera.position.set(0, r * 0.12, r * 2.3);
     view.camera.updateProjectionMatrix();
     view.controls.minDistance = r * 0.6;
     view.controls.maxDistance = r * 4;
@@ -110,6 +153,7 @@ export async function mountOrgan(host: HTMLElement, src: string): Promise<boolea
     try {
         const obj = (await load(src)).clone(true);
         if (current !== view) return true;
+        paint(obj);
         view.model = obj;
         scene.add(obj);
         frame(view, obj);
