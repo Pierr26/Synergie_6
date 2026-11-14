@@ -790,8 +790,7 @@ dialog::backdrop { background: rgba(23, 58, 56, 0.38); }
 
 @media print {
     body, .app, .main { background: #fff; }
-    .main::before { display: none; }
-    .preview, .side, .top, .remind, .tabbar, .disclaimer, .page-head, .rep-side, .rep-actions, .queue-panel, .toast-host, .skip-link { display: none !important; }
+        .preview, .side, .top, .remind, .tabbar, .disclaimer, .page-head, .rep-side, .rep-actions, .queue-panel, .toast-host, .skip-link { display: none !important; }
     .app { display: block; }
     .view { padding: 0; max-width: none; }
     .reports { display: block; }
@@ -1256,12 +1255,7 @@ button.orb-btn:focus-visible { outline: 2px solid #9ee6cf; outline-offset: 6px; 
 .cmo-board { display: grid; gap: 18px; }
 .cmo-board .card { margin-bottom: 0; }
 /* Role-based mission experience: application scale, quieter controls, one next step. */
-:root { --fd: Figtree, system-ui, sans-serif; --e1: 0 2px 10px #173a3806; }
-body { font-size: 16px; }
-h1, h2, h3 { font-weight: 600; letter-spacing: -.025em; }
-.top h1 { font-size: clamp(26px, 2.5vw, 34px); }
 .main::before { display: none; }
-.main { background: var(--bg); }
 .mission-kicker { display: block; font: 500 11px/1.5 var(--fm); letter-spacing: .13em; color: var(--muted); margin-bottom: 12px; }
 .today-hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(240px, 1fr); background: var(--card); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; margin-bottom: 20px; }
 .today-copy { padding: clamp(24px,3vw,42px); align-self: center; }
@@ -1358,3 +1352,54 @@ h1, h2, h3 { font-weight: 600; letter-spacing: -.025em; }
     .account-content { padding: 24px 16px 40px; }
 }
 @media (prefers-reduced-motion: reduce) { .today-window *, .journey-link { animation: none !important; transition: none !important; } }
+
+/* ================================================================ mockup fidelity (reference/QUINTA-lot4), applied last
+   Frame on white, transparent sidebar, main panel framed by the sidebar, sticky translucent header.
+   Values copied from the mockup's "Panneau principal encadré" and "Profondeur générale" blocks. */
+html, body { background: linear-gradient(180deg, #ffffff 0%, #f3f9f6 100%); background-attachment: fixed; }
+.app { background: transparent; }
+.preview { background: transparent; border-bottom: 0; padding: 10px 16px; }
+.side { background: transparent; border-right: 0; gap: 12px; padding: 16px 14px; height: calc(100vh - 58px); }
+.main { margin: 10px 10px 10px 0; border-radius: 26px; background: radial-gradient(1100px 520px at 72% -8%, #ffffff 0%, rgba(255, 255, 255, 0) 60%), var(--bg); border: 1px solid #d8e8e2; box-shadow: 0 1px 2px rgba(23, 58, 56, 0.05), 0 22px 48px -30px rgba(23, 58, 56, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9); min-height: calc(100vh - 78px); }
+.main::before { display: none; }
+.top { position: sticky; top: 0; z-index: 4; background: rgba(241, 248, 245, 0.84); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); border-radius: 26px 26px 0 0; padding: 24px 32px 14px; align-items: flex-end; }
+.top h1 { font-family: var(--fd); font-weight: 400; font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+.eb-day { font-family: var(--fd); font-size: 16px; color: var(--lagon-d); letter-spacing: 0.01em; }
+h1, h2, h3, h4 { letter-spacing: 0; }
+/* mission guide: a quiet card, like the mockup's reminder, not a dark slab */
+.coach { margin: 2px 32px 0; color: var(--ink); background: var(--card); border: 1px solid var(--line); box-shadow: 0 16px 32px -22px rgba(23, 58, 56, 0.5); }
+.coach-steps { color: var(--muted); }
+.coach-steps li + li::before { background: var(--line); }
+.coach-steps li.done + li::before { background: var(--lagon); }
+.coach-n { border-color: var(--line); }
+.coach-steps li.done { color: var(--lagon-d); }
+.coach-steps li.done .coach-n { background: var(--lagon); border-color: var(--lagon); color: #fff; }
+.coach-steps li.now { color: var(--ink); }
+.coach-steps li.now .coach-n { border-color: var(--wt); color: var(--wt-d); box-shadow: 0 0 0 4px var(--wt-z); }
+.coach-now p { color: var(--ink2); }
+.coach-now p b { color: var(--ink); }
+.coach-cta { background: var(--lagon); color: #fff; }
+.coach-cta:hover { background: var(--lagon-d); }
+.coach-cta.ghost { background: var(--bg); color: var(--lagon-d); border: 1px solid var(--line); }
+.coach-x { color: var(--muted); }
+.coach-x:hover { background: var(--line2); color: var(--ink); }
+:root.night .main { background: radial-gradient(1100px 520px at 72% -8%, rgba(255, 214, 170, 0.07) 0%, rgba(0, 0, 0, 0) 60%), var(--bg); border-color: #3b3251; box-shadow: 0 22px 48px -28px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+:root.night .top { background: rgba(30, 25, 41, 0.86); }
+:root.night, :root.night body { background: linear-gradient(180deg, #1c1727 0%, #16121f 100%); }
+@media (max-width: 1099px) { .side { height: calc(100vh - 58px); } }
+@media (max-width: 699px) {
+    .main { margin: 0; border-radius: 0; border: 0; box-shadow: none; min-height: 100vh; }
+    .top { border-radius: 0; padding: 16px 16px 12px; }
+    .coach { margin: 2px 16px 0; }
+}
+.chip .link { display: inline-flex; }
+.chip-ok { display: inline-flex; color: var(--ok); margin-left: 2px; }
+.chip.off .chip-ok { color: var(--al-d); }
+/* mockup typography: Young Serif for display titles, no spaced mono capitals, values in mono 17px */
+.today-copy h2, .review-queue h2, .verdict h2, .gl-panel h2 { font-family: var(--fd); font-weight: 400; }
+.today-copy h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.15; max-width: 22ch; }
+.today-lower h2, .card > h2:first-child { font-family: var(--fb); font-size: 17px; font-weight: 600; }
+.mission-kicker { font: 600 12.5px/1.5 var(--fb); letter-spacing: 0.005em; text-transform: none; color: var(--muted); margin-bottom: 8px; }
+.today-reading b { font-family: var(--fm); font-size: 17px; font-weight: 500; word-spacing: -0.2em; }
+.journey-step { display: none; }
+.today-window figcaption { font: 500 12px var(--fb); letter-spacing: 0; color: rgba(255, 255, 255, 0.7); }

@@ -141,7 +141,7 @@ export async function renderCrew(): Promise<Html> {
     ${pageHead('Review queue', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${simTag()}${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
     <div class="cmo-top">
   <section class="card review-queue" aria-labelledby="queue-h">
-      <div class="card-h"><div><span class="mission-kicker">ONBOARD CARE</span><h2 id="queue-h">Review queue</h2></div>${badge(`${queue.filter(i => !i.waitingForCrew).length} ready for review`, 'info', 'review')}</div>
+      <div class="card-h"><div><span class="mission-kicker">On-board care</span><h2 id="queue-h">Review queue</h2></div>${badge(`${queue.filter(i => !i.waitingForCrew).length} ready for review`, 'info', 'review')}</div>
       <p class="hint">Open a case to see observations, the sleep trend and any photo. Follow-up responses return to the same file.</p>
       ${queue.length ? html`<div class="review-list">${queue.map(i => html`<a class="review-row" href="${i.href}" data-link><span class="av">${repo.memberStatic(ws(),i.crewId).initials}</span><span><b>${repo.memberStatic(ws(),i.crewId).alias}</b><span>${i.reason}</span><small class="mono">${utcStamp(Date.parse(i.at))} · Day ${missionDay(Date.parse(i.at),c.epoch)}</small></span>${badge(i.status, i.waitingForCrew ? 'muted' : 'review', i.waitingForCrew ? 'clock' : 'review')}${icon('arrow','sm')}</a>`)}</div>` : html`<div class="empty-q">${icon('ok')}<p>No review waiting. New observations and crew replies appear here.</p></div>`}
     </section>

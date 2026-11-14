@@ -123,13 +123,11 @@ export async function renderShell(view: Html): Promise<Html> {
           <h1 tabindex="-1" id="page-title">${title}</h1>
           </div>
           <div class="status-strip">
-            <button type="button" class="chip ${app.groundLink ? '' : 'off'}" data-action="toggle-link" aria-pressed="${app.groundLink}" title="Simulated ground link. Select to cut or restore it.">
-              <span class="link-dot ${app.groundLink ? '' : 'off'}" aria-hidden="true"></span>Ground link <b>${app.groundLink ? 'connected' : 'offline'}</b>
+            <button type="button" class="chip ${app.groundLink ? '' : 'off'}" data-action="toggle-link" aria-pressed="${app.groundLink}" title="Simulated ground link. Select to cut or restore it. ${app.browserOnline ? 'Device online' : 'Device offline'} · ${app.offlineReady ? 'ready offline' : 'preparing offline'}.">
+              <span class="link ${app.groundLink ? '' : 'off'}"><span class="pulse"></span></span><span>${app.groundLink ? html`Ground <b>connected</b>` : html`Ground <b>offline</b>`}</span>${app.offlineReady ? html`<span class="chip-ok" aria-label="Ready offline">${icon('ok', 'sm')}</span>` : ''}
             </button>
-            <span class="chip ${app.browserOnline ? '' : 'off'}" title="Network state reported by this browser">${icon('device', 'sm')}<span class="chip-l">Device</span> <b>${app.browserOnline ? 'online' : 'offline'}</b></span>
-            <span class="chip ${app.offlineReady ? 'ok' : ''}" title="Whether the app is cached on this device">${icon('cache', 'sm')}<b>${app.offlineReady ? 'Ready offline' : 'Preparing offline'}</b></span>
-            ${queueSummary.length ? html`<a href="/reports" data-link class="chip info" title="Ground report queue">${icon('send', 'sm')}Reports <b>${queueSummary.join(' · ')}</b></a>` : ''}
-            <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><span class="pal-l">Go to</span><kbd>Ctrl K</kbd></button>
+            ${queueSummary.length && app.role === 'cmo' ? html`<a href="/reports" data-link class="chip info" title="Ground report queue">${icon('send', 'sm')}Reports <b>${queueSummary.join(' · ')}</b></a>` : ''}
+            <button type="button" class="chip pal-btn" data-action="palette" title="Search screens and actions (Ctrl K)">${icon('menu', 'sm')}<span class="sr-only">Go to a screen or action</span><kbd>Ctrl K</kbd></button>
             <button type="button" class="chip night-btn" data-action="night-toggle" aria-pressed="${isNight()}" title="Soft night: warm, dark colours for the sleep period">${icon('moon', 'sm')}<span class="sr-only">Soft night</span></button>
             ${app.role === 'astronaut' ? html`<a href="/help" data-link class="chip help-btn" aria-label="Help">${icon('help', 'sm')}</a>` : ''}
             <a href="/notifications" data-link class="chip bell ${app.route.segments[0] === 'notifications' ? 'active' : ''}" aria-label="Notifications, ${app.unread} unread">${icon('bell', 'sm')}${app.unread ? html`<span class="count">${app.unread}</span>` : ''}</a>

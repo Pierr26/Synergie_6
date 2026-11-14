@@ -41,13 +41,13 @@ export async function renderOverview(): Promise<Html> {
     ];
     return html`${pageHead('Today', html`Welcome back, ${repo.memberStatic(ws(), crew).shortName}. Your next step, then the rest of your day.`)}
       <section class="today-hero" aria-labelledby="next-h">
-        <div class="today-copy"><span class="mission-kicker">CREW HEALTH / DAY ${day}</span>
+        <div class="today-copy"><span class="mission-kicker">Crew health · Day ${day}</span>
           ${badge(state, saved && !pending.length && !follow && !symptomFollow ? 'ok' : 'info', saved ? 'ok' : 'clock')}
           <h2 id="next-h">${title}</h2><p>${reason}</p>
           <a class="btn btn-primary" data-link href="${href}">${cta}${icon('arrow')}</a>
           ${saved ? html`<span class="today-saved">${icon('ok', 'sm')}Check-in saved · ${hhmm(Date.parse(checkin.submittedAt!))} UTC <a href="/check-in" data-link>Today’s summary</a></span>` : ''}
         </div>
-        <figure class="today-window"><img src="/assets/illustrations/lunar-window.webp" alt="Illustrated view of the Moon through a spacecraft window" width="1200" height="800"><figcaption>QUINTA · Mission illustration</figcaption></figure>
+        <figure class="today-window"><img src="/assets/illustrations/lunar-window.webp" alt="Illustrated view of the Moon through a spacecraft window" width="1200" height="800"><figcaption>AI-generated illustration</figcaption></figure>
       </section>
       <nav class="journey-links" aria-label="Your daily journey">
         ${nextSteps.map((s,i) => html`<a href="${s.href}" data-link class="journey-link"><span class="journey-step">0${i+1}</span>${icon(s.ic)}<span><b>${s.title}</b><small>${s.text}</small></span>${icon('arrow', 'sm')}</a>`)}
