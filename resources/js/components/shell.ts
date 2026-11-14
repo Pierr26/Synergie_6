@@ -3,10 +3,11 @@ import { reviewItems } from '../data/experience';
 import { QUEUE_LABEL, type QueueState } from '../domain/queue';
 import { hhmm, longDate, missionDay } from '../domain/time';
 import { isNight } from '../fx';
-import { html, type Html } from '../lib/html';
+import { html, raw, type Html } from '../lib/html';
 import { app, cfg, homeFor, me, ws } from '../state';
 import { icon } from './icons';
 import { takePageTitle } from './ui';
+import { formatButtons, IN_FRAME } from '../preview-device';
 
 interface NavItem {
     href: string;
@@ -88,7 +89,7 @@ export async function renderShell(view: Html): Promise<Html> {
     const rest = items.filter((i) => !tabs.includes(i));
 
     return html`
-    ${previewBar(demo, astro.shortName, cmo.shortName, repo.memberStatic(ws(), c.groundId).shortName)}
+    ${IN_FRAME ? '' : previewBar(demo, astro.shortName, cmo.shortName, repo.memberStatic(ws(), c.groundId).shortName)}
     <div class="app ${demo ? 'is-demo' : 'is-explore'}">
       <aside class="side" aria-label="Main navigation">
         <div class="sb-top">
@@ -161,6 +162,7 @@ function previewBar(demo: boolean, astro: string, cmo: string, ground: string): 
           <label class="scn-check"><input type="checkbox" data-action="lose-receipt" ${app.loseNextReceipt ? 'checked' : ''}> Lose next receipt</label>
         </section></details>`
           : html`<span class="scn"><span class="scn-l">Real clock · no mission rule configured</span></span>`}
+      <div class="pv-btns pv-formats" role="group" aria-label="Preview format">${raw(formatButtons())}</div>
       <div class="pv-btns" role="group" aria-label="Role">
         <button type="button" data-action="role" data-role="astronaut" aria-pressed="${app.role === 'astronaut'}">Astronaut · ${astro}</button>
         <button type="button" data-action="role" data-role="cmo" aria-pressed="${app.role === 'cmo'}">CMO · ${cmo}</button>

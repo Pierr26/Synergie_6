@@ -13,6 +13,7 @@ import { app, homeFor, me, writePref, ws } from './state';
 import { routes } from './routes';
 import { bus } from './bus';
 import { initFx, mountFx, withTransition } from './fx';
+import { applyPreview, setPreviewFormat, type PreviewFormat } from './preview-device';
 
 const root = document.getElementById('app')!;
 let rendering = false;
@@ -49,6 +50,7 @@ export async function render(isNavigation = false): Promise<void> {
     }
     rendering = true;
     try {
+        if (app.ws && app.route.segments.length > 0 && applyPreview(root)) return;
         if (!app.ws || app.route.segments.length === 0) {
             const entry = (await renderEntry()).value;
             await withTransition(() => {
@@ -150,7 +152,7 @@ async function signature(): Promise<string> {
 
 /** Background work: reminders, queue processing. Re-renders only if visible state changed and no form is being edited. */
 async function tick(): Promise<void> {
-    if (!app.ws || document.hidden) return;
+    if (!app.ws || document.hidden || document.documentElement.classList.contains('pv-device')) return;
     app.now = await repo.readNow(ws());
     await repo.syncReminders(ws(), WORKSPACES[ws()].astronautId, app.now);
     const changed = await repo.processQueue(ws(), { groundLink: app.groundLink, browserOnline: app.browserOnline, loseNextReceipt: app.loseNextReceipt }, () => (WORKSPACES[ws()].simulatedClock ? app.now : Date.now()), fetch.bind(window), () => render());
@@ -173,6 +175,10 @@ async function enterWorkspace(id: WorkspaceId, role: Role = 'astronaut'): Promis
 }
 
 registerActions({
+    'pv-format': async (el) => {
+        setPreviewFormat(el.dataset.pv as PreviewFormat);
+        await render();
+    },
     'enter-demo': async () => {
         await enterWorkspace('demo');
         navigate('/overview');

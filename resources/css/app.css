@@ -1403,3 +1403,12 @@ h1, h2, h3, h4 { letter-spacing: 0; }
 .today-reading b { font-family: var(--fm); font-size: 17px; font-weight: 500; word-spacing: -0.2em; }
 .journey-step { display: none; }
 .today-window figcaption { font: 500 12px var(--fb); letter-spacing: 0; color: rgba(255, 255, 255, 0.7); }
+/* preview formats (mockup "Aperçu formats"): device frame 10px #C4DDD5, radius 30 (44 on phone) */
+.pv-formats { margin-left: auto; }
+#pv-stage { min-height: 100vh; display: flex; flex-direction: column; }
+.pv-stage-bar { justify-content: flex-start; }
+.pv-stage-bar .pv-line { margin-right: auto; }
+.pv-frame-wrap { flex: 1; display: grid; justify-items: center; align-items: start; padding: 8px 16px 40px; }
+.pv-frame { width: var(--w); max-width: calc(100vw - 32px); height: var(--h); max-height: calc(100vh - 110px); border: 10px solid #c4ddd5; border-radius: 30px; box-shadow: 0 40px 80px -40px rgba(23, 58, 56, 0.45); background: var(--bg); box-sizing: content-box; }
+.pv-frame.phone { border-radius: 44px; }
+@media (max-width: 900px) { .pv-formats { display: none; } }
