@@ -1,6 +1,6 @@
 import { bus } from '../../bus';
 import { icon } from '../../components/icons';
-import { obsValue, pageHead, qualityBadge, simTag, sourceLabel, toast } from '../../components/ui';
+import { obsValue, pageHead, qualityBadge, sourceLabel, toast } from '../../components/ui';
 import * as repo from '../../data/repo';
 import { parseNumber, validateBloodPressure, validateGlucose, validateSpO2, validateTemperature, VARIABLE_META, type ValidationResult } from '../../domain/measurements';
 import { hhmm, missionDay } from '../../domain/time';
@@ -139,7 +139,7 @@ export async function renderMeasurements(): Promise<Html> {
     const all = (await repo.observationsFor(ws(), crewId)).filter((o) => KINDS.includes(o.variable as Kind)).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
     const current_ = all.filter((o) => !o.supersededBy).slice(0, 12);
     return html`
-    ${pageHead('Spot measurements', 'Blood pressure, SpO₂, temperature and glucose, entered when asked or useful. Value, unit, method, context and time stay with each reading.', simTag())}
+    ${pageHead('Spot measurements', 'Blood pressure, SpO₂, temperature and glucose, entered when asked or useful. Value, unit, method, context and time stay with each reading.')}
     ${reqId ? html`<p class="notice">${icon('followup')}Saving this measurement answers your CMO’s follow-up request.</p>` : ''}
     <div class="tabs" role="tablist" aria-label="Measurement type">
       ${KINDS.map((k) => html`<a role="tab" href="/measurements?type=${k}${reqId ? `&request=${reqId}` : ''}" data-link aria-selected="${k === kind}" class="${k === kind ? 'active' : ''}">${VARIABLE_META[k].label}</a>`)}

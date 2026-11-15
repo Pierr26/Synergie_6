@@ -45,3 +45,4 @@ Thumbs.db
 !/storage/app/public/.gitignore
 /.claude/settings.local.json
 /shots
+/incoming

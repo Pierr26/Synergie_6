@@ -29,10 +29,6 @@ export function badge(text: string, tone: Tone = 'muted', ic?: string): Html {
     return html`<span class="badge badge-${tone}">${ic ? icon(ic) : ''}${text}</span>`;
 }
 
-export function simTag(text = 'Simulated crew data'): Html {
-    return html`<span class="sim-tag" title="Fictional data generated for this prototype">${text}</span>`;
-}
-
 export function demoRuleTag(): Html {
     return html`<span class="badge badge-review">${icon('review')}Demo rule</span>`;
 }

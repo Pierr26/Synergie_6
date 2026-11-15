@@ -17,12 +17,16 @@ function quintaServiceWorker(): Plugin {
             const statics = [
                 '/',
                 '/manifest.webmanifest',
-                '/assets/brand/quinta-logo.svg',
-                '/assets/brand/quinta-symbole.svg',
+                '/assets/brand/hexta-logo.svg',
+                '/assets/brand/hexta-symbole.svg',
                 '/assets/brand/favicon-32.png',
-                '/assets/brand/quinta-icone-app-180.png',
+                '/assets/brand/hexta-icone-app-180.png',
                 '/assets/illustrations/body-front.webp',
+                '/assets/photos/entry-astronaut.webp',
+                '/assets/photos/entry-cmo.webp',
+                '/assets/photos/entry-ground.webp',
                 '/assets/illustrations/lunar-window.webp',
+                '/assets/illustrations/simulated-skin-mark.webp',
             ];
             // Read what was really written (Vite manifest), skipping dynamic-only chunks (3D viewer).
             type Chunk = { file: string; css?: string[]; assets?: string[]; isDynamicEntry?: boolean };

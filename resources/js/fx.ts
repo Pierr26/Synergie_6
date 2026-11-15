@@ -33,7 +33,7 @@ export async function withTransition(update: () => void, isNavigation: boolean):
 
 /* ------------------------------------------------------------------ soft night */
 
-function applyNight(on: boolean): void {
+export function applyNight(on: boolean): void {
     document.documentElement.classList.toggle('night', on);
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', on ? '#16121f' : '#2f7f74');
 }
@@ -242,12 +242,16 @@ function commands(): Command[] {
     const nav: Command[] =
         app.role === 'cmo'
             ? [
-                  { label: 'Crew console', hint: 'Screen', run: go('/crew') },
+                  { label: 'Review queue', hint: 'Screen', run: go('/crew') },
+                  { label: 'Team', hint: 'Screen', run: go('/crew/teammates') },
+                  { label: 'Daily Check-in', hint: 'Screen', run: go('/check-in') },
                   { label: 'Reports', hint: 'Screen', run: go('/reports') },
+                  { label: 'Trends', hint: 'Screen', run: go('/trends') },
               ]
             : [
-                  { label: 'Overview', hint: 'Screen', run: go('/overview') },
+                  { label: 'Today', hint: 'Screen', run: go('/overview') },
                   { label: 'Daily check-in', hint: 'Screen', run: go('/check-in') },
+                  { label: 'Report a Symptom', hint: 'Screen', run: go('/symptoms') },
                   { label: 'Follow-up', hint: 'Screen', run: go('/follow-up') },
                   { label: 'Spot measurements', hint: 'Screen', run: go('/measurements') },
                   { label: 'Add blood pressure', hint: 'Measure', run: go('/measurements?type=bp') },

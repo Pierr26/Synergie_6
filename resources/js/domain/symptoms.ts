@@ -89,8 +89,16 @@ export function validateSubmission(input: SymptomInput, now: number): Partial<Re
 
 /** Whether the CMO is waiting for an answer from the crew member. */
 export function awaitingReply(thread: SymptomReviewEntry[]): boolean {
-    const last = [...thread].sort((a, b) => a.seq - b.seq).filter((e) => e.kind === 'more-info' || e.kind === 'reply').pop();
+    const last = [...thread].sort((a, b) => a.seq - b.seq).filter((e) => ['more-info', 'reply', 'completed'].includes(e.kind)).pop();
     return last?.kind === 'more-info';
+}
+
+export function symptomReviewState(report: SymptomReport, thread: SymptomReviewEntry[]): string {
+    if (report.status === 'draft') return 'Saved on this device';
+    if (report.status === 'reviewed') return 'Reviewed';
+    if (awaitingReply(thread)) return 'Follow-up requested';
+    const last = [...thread].sort((a, b) => a.seq - b.seq).at(-1);
+    return last?.kind === 'reply' ? 'Response received' : 'Crew review pending';
 }
 
 export const STATUS_LABEL: Record<SymptomStatus, string> = {
