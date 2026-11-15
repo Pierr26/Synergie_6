@@ -1,6 +1,6 @@
 import { bus } from '../../bus';
 import { icon } from '../../components/icons';
-import { badge, pageHead, simTag, toast } from '../../components/ui';
+import { badge, pageHead, toast } from '../../components/ui';
 import type { GroundNoteRow, ReportRow } from '../../data/db';
 import * as repo from '../../data/repo';
 import { hhmm, missionDay, utcStamp } from '../../domain/time';
@@ -48,7 +48,6 @@ function linkPanel(last: ReportRow | undefined): Html {
         <p>${up ? 'Reports the crew medical officer queues arrive here within seconds. Your notes reach the crew at once.' : 'The crew keeps working on board. Reports and notes wait at each end until the link returns.'}</p>
         <p class="gl-last">${last ? html`Last report received <b>${ago(last.queue.receipt!.receivedAt)}</b> · <span class="mono">${utcStamp(Date.parse(last.queue.receipt!.receivedAt))}</span>` : 'No report received yet.'}</p>
       </div>
-      <span class="gl-sim">Simulated link</span>
     </section>`;
 }
 
@@ -98,27 +97,21 @@ export async function renderGround(): Promise<Html> {
     </section>`;
 
     return html`
-    ${pageHead('Houston', html`${repo.memberStatic(ws(), me()).alias} · flight surgeon on Earth · ${c.missionName}, Day ${missionDay(app.now, c.epoch)}`, html`<div class="head-tags">${simTag()}</div>`)}
+    ${pageHead('Houston', html`${repo.memberStatic(ws(), me()).alias} · flight surgeon on Earth · ${c.missionName}, Day ${missionDay(app.now, c.epoch)}`)}
     ${linkPanel(reports[0])}
-    <div class="ground-grid">
-      <div class="ground-main">
-        ${sel
-            ? html`<p><a href="/ground" data-link class="link-quiet">${icon('back', 'sm')}All received reports</a></p>
-              <section class="card" aria-label="Received report">${reportDoc(sel)}<p class="fine">Received <span class="mono">${utcStamp(Date.parse(sel.queue.receipt!.receivedAt))}</span> by ${sel.queue.receipt!.receiver} · receipt <span class="mono">${sel.queue.receipt!.receiptId.slice(0, 8)}</span></p></section>`
-            : html`<section class="card" aria-labelledby="rr-h">
-              <div class="card-h"><h2 id="rr-h">Received reports</h2><small>${reports.length} on Earth</small></div>
-              ${reports.length
-                  ? html`<div class="gr-list">${reports.map((r) => reportCard(r, false))}</div>`
-                  : html`<div class="empty-q gl-empty">${icon('linkoff')}<div><b>Nothing received yet</b><p>A report arrives when the crew medical officer queues one and the ground link is up. Until then, the crew handles everything on board.</p></div></div>`}
-            </section>`}
-      </div>
-      <div class="ground-side">
-        ${form}
-        <section class="card" aria-labelledby="gnl-h">
-          <div class="card-h"><h2 id="gnl-h">Your notes</h2>${waiting ? badge(`${waiting} waiting`, 'info', 'clock') : ''}</div>
-          ${notes.length ? html`<ol class="gn-list">${notes.map(noteRow)}</ol>` : html`<p class="muted">No note yet.</p>`}
-        </section>
-        ${sees}
-      </div>
-    </div>`;
+    ${sel
+        ? html`<p><a href="/ground" data-link class="link-quiet">${icon('back', 'sm')}All received reports</a></p>
+          <section class="card" aria-label="Received report">${reportDoc(sel)}<p class="fine">Received <span class="mono">${utcStamp(Date.parse(sel.queue.receipt!.receivedAt))}</span> by ${sel.queue.receipt!.receiver} · receipt <span class="mono">${sel.queue.receipt!.receiptId.slice(0, 8)}</span></p></section>`
+        : html`<section class="card" aria-labelledby="rr-h">
+          <div class="card-h"><h2 id="rr-h">Received reports</h2><small>${reports.length} on Earth</small></div>
+          ${reports.length
+              ? html`<div class="gr-list">${reports.map((r) => reportCard(r, false))}</div>`
+              : html`<div class="empty-q gl-empty">${icon('linkoff')}<div><b>Nothing received yet</b><p>A report arrives when the crew medical officer queues one and the ground link is up. Until then, the crew handles everything on board.</p></div></div>`}
+        </section>`}
+    ${form}
+    <section class="card" aria-labelledby="gnl-h">
+      <div class="card-h"><h2 id="gnl-h">Your notes</h2>${waiting ? badge(`${waiting} waiting`, 'info', 'clock') : ''}</div>
+      ${notes.length ? html`<ol class="gn-list">${notes.map(noteRow)}</ol>` : html`<p class="muted">No note yet.</p>`}
+    </section>
+    ${sees}`;
 }

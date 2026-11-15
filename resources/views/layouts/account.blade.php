@@ -12,14 +12,16 @@
     <aside class="account-side"><a class="brand" href="/account"><img src="/assets/brand/hexta-logo.svg" width="40" height="48" alt="HEXTA"></a>
         <span class="mission-kicker">{{ $user->role === 'cmo' ? 'CREW MEDICAL OFFICER' : 'ASTRONAUT' }}</span>
         <nav aria-label="Main navigation">
-            @php($nav = $user->role === 'cmo' ? ['reviews'=>'Review queue','reports'=>'Reports','transmission'=>'Ground transmission','trends'=>'Trends','body'=>'Body & Risks'] : ['today'=>'Today','check-in'=>'Daily Check-in','trends'=>'Trends','body'=>'Body & Risks','symptoms'=>'Report a Symptom','follow-up'=>'Follow-up'])
+            @php($nav = $user->role === 'cmo' ? ['reviews'=>'Review queue','teammates'=>'Team','check-in'=>'Daily Check-in','reports'=>'Reports','transmission'=>'Ground transmission','trends'=>'Trends','body'=>'Body & Risks'] : ['today'=>'Today','check-in'=>'Daily Check-in','trends'=>'Trends','body'=>'Body & Risks','symptoms'=>'Report a Symptom','follow-up'=>'Follow-up'])
             @foreach($nav as $key => $label)<a href="/account/{{ $key }}" @if(($page ?? '') === $key) aria-current="page" @endif>{{ $label }}</a>@endforeach
         </nav>
+        <details class="profile-menu" data-pop>
+            <summary class="crew" aria-label="Profile: {{ $user->name }}"><i aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</i><span class="profile-name"><b>{{ $user->name }}</b><span>{{ $user->role === 'cmo' ? 'Crew medical officer' : 'Astronaut' }}</span></span><span aria-hidden="true">⌄</span></summary>
+            <div class="pop-panel profile-panel"><form action="/logout" method="post">@csrf<button class="btn btn-ghost">Sign out</button></form></div>
+        </details>
     </aside>
     <main id="main" class="account-content">
-        <header class="account-head"><div><span class="mission-kicker">MISSION {{ $user->mission_id }}</span><h1>@yield('title', 'Mission workspace')</h1><p>{{ $user->name }} · {{ $user->role === 'cmo' ? 'Crew medical officer' : 'Astronaut' }}</p></div>
-            <form action="/logout" method="post">@csrf<button class="btn btn-ghost">Sign out</button></form>
-        </header>
+        <header class="account-head"><div><span class="mission-kicker">MISSION {{ $user->mission_id }}</span><h1>@yield('title', 'Mission workspace')</h1><p>{{ $user->name }} · {{ $user->role === 'cmo' ? 'Crew medical officer' : 'Astronaut' }}</p></div></header>
         <p class="account-banner">Connected workspace · your account determines your role and mission. Demo records are kept separately.</p>
         @if(session('saved'))<p class="account-banner" role="status">{{ session('saved') }}</p>@endif
         @if($errors->any())<div class="account-banner" role="alert"><b>Please check these fields</b><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

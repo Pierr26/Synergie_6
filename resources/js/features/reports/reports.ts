@@ -1,6 +1,6 @@
 import { bus } from '../../bus';
 import { icon } from '../../components/icons';
-import { badge, pageHead, queueBadge, simTag, toast } from '../../components/ui';
+import { badge, pageHead, queueBadge, toast } from '../../components/ui';
 import type { ReportRow } from '../../data/db';
 import * as repo from '../../data/repo';
 import { LAB_META } from '../../domain/labs';
@@ -24,7 +24,7 @@ registerActions({
         }
         const r = await repo.generateReport(ws(), crewId, fromDay, toDay, me(), app.now);
         toast(`Report generated on this device for ${repo.memberStatic(ws(), crewId).alias}. Not queued yet.`);
-        bus.navigate(`/reports?report=${r.id}`);
+        bus.navigate(`/reports?report=${r.id}#report-detail`);
     },
     'report-print': () => window.print(),
     'report-queue': async (el) => {
@@ -156,16 +156,16 @@ export async function renderReports(): Promise<Html> {
       </form>` : html`<p class="notice">${icon('info')}Reports are generated and queued by your crew medical officer. You can read the ones about you.</p>`;
 
     return html`
-    ${pageHead('Reports', 'Individual snapshots, printable, queued for ground only when the CMO decides.', simTag())}
+    ${pageHead('Reports', 'Individual snapshots, printable, queued for ground only when the CMO decides.')}
     <div class="reports">
       <div class="rep-side">
         ${generator}
         <section class="card" aria-labelledby="list-h">
           <h2 id="list-h">Generated reports</h2>
-          ${reports.length ? html`<ul class="rep-list">${reports.map((r) => html`<li class="${r.id === selId ? 'active' : ''}"><a href="/reports?report=${r.id}" data-link><b>${repo.memberStatic(ws(), r.crewId).alias}</b><small>Day ${r.fromDay}–${r.toDay} · ${utcStamp(Date.parse(r.createdAt))}</small></a>${queueBadge(r.queue.state)}</li>`)}</ul>` : html`<p class="muted">No report yet.</p>`}
+          ${reports.length ? html`<ul class="rep-list">${reports.map((r) => html`<li class="${r.id === selId ? 'active' : ''}"><a href="/reports?report=${r.id}#report-detail" data-link><b>${repo.memberStatic(ws(), r.crewId).alias}</b><small>Day ${r.fromDay}–${r.toDay} · ${utcStamp(Date.parse(r.createdAt))}</small></a>${queueBadge(r.queue.state)}</li>`)}</ul>` : html`<p class="muted">No report yet.</p>`}
         </section>
       </div>
-      <div class="rep-main">
+      <div class="rep-main" id="report-detail">
         ${sel ? html`
           <div class="rep-actions"><button type="button" class="btn btn-ghost" data-action="report-print">${icon('print')}Print / Save as PDF</button></div>
           ${app.role === 'cmo' ? queuePanel(sel) : html`<p>${queueBadge(sel.queue.state)}</p>`}

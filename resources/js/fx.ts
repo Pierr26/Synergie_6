@@ -33,7 +33,7 @@ export async function withTransition(update: () => void, isNavigation: boolean):
 
 /* ------------------------------------------------------------------ soft night */
 
-function applyNight(on: boolean): void {
+export function applyNight(on: boolean): void {
     document.documentElement.classList.toggle('night', on);
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', on ? '#16121f' : '#2f7f74');
 }
@@ -243,7 +243,10 @@ function commands(): Command[] {
         app.role === 'cmo'
             ? [
                   { label: 'Review queue', hint: 'Screen', run: go('/crew') },
+                  { label: 'Team', hint: 'Screen', run: go('/crew/teammates') },
+                  { label: 'Daily Check-in', hint: 'Screen', run: go('/check-in') },
                   { label: 'Reports', hint: 'Screen', run: go('/reports') },
+                  { label: 'Trends', hint: 'Screen', run: go('/trends') },
               ]
             : [
                   { label: 'Today', hint: 'Screen', run: go('/overview') },

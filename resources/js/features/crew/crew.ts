@@ -1,6 +1,6 @@
 import { bus } from '../../bus';
 import { icon } from '../../components/icons';
-import { badge, demoRuleTag, obsValue, pageHead, qualityBadge, queueBadge, simTag, sourceLabel, toast } from '../../components/ui';
+import { badge, demoRuleTag, obsValue, pageHead, qualityBadge, queueBadge, sourceLabel, toast } from '../../components/ui';
 import * as repo from '../../data/repo';
 import { reviewItems } from '../../data/experience';
 import { compareToInterval, hoursBetween, LAB_META, normalizeLab, type Analyte, type LabStatus } from '../../domain/labs';
@@ -99,38 +99,19 @@ registerActions({
 async function memberState(crewId: string) {
     const c = cfg();
     const day = missionDay(app.now, c.epoch);
-    const [ci, alerts, reqs, labs] = await Promise.all([repo.checkinFor(ws(), crewId, day), repo.alertsFor(ws(), crewId), repo.requestsFor(ws(), crewId), repo.labsFor(ws(), crewId)]);
+    const [ci, alerts, reqs, symptoms] = await Promise.all([repo.checkinFor(ws(), crewId, day), repo.alertsFor(ws(), crewId), repo.requestsFor(ws(), crewId), pendingSymptomReports(crewId)]);
     const pendingAlert = alerts.find((a) => a.status === 'needs-review');
     const reviewReq = reqs.find((r) => r.kind === 'review-request' && r.status === 'open');
-    const answered = reqs.find((r) => r.kind === 'follow-up' && r.status === 'answered');
-    const symptoms = await pendingSymptomReports(crewId);
-    const outOfRange = labs.filter((l) => !l.supersededBy && ['Below', 'Above'].includes(compareToInterval(l)));
-    let state: Html;
-    if (pendingAlert) state = html`${badge('Crew review pending', 'review', 'review')}`;
-    else if (reviewReq) state = badge('Crew review requested', 'review', 'review');
-    else if (symptoms) state = badge('Symptom report to review', 'review', 'camera');
-    else if (ci?.status === 'submitted') state = badge('Check-in today', 'ok', 'ok');
-    else state = badge('No check-in yet today', 'muted', 'missing');
-    return { ci, pendingAlert, reviewReq, answered, outOfRange, state, symptoms };
+    return { ci, pendingAlert, reviewReq, symptoms };
 }
 
 export async function renderCrew(): Promise<Html> {
     if (app.role !== 'cmo') return html`${pageHead('Crew console')}<div class="card">${icon('info')} The crew console is for the crew medical officer. Switch role to CMO.</div>`;
     const id = app.route.segments[1];
+    if (id === 'teammates') return renderTeammates();
     if (id) return renderMember(id);
     const c = cfg();
-    const day = missionDay(app.now, c.epoch);
-    const astronauts = (await repo.members(ws())).filter((m) => m.role === 'astronaut');
     const queue = await reviewItems(ws());
-    const rows = await Promise.all(
-        astronauts.map(async (m) => {
-            const all = await repo.currentObservations(ws(), m.id);
-            const diary = new Map(all.filter((o) => o.variable === 'sleep_main' && o.method === SLEEP_RULE.method).map((o) => [o.missionDay, o]));
-            const latest = (v: Variable) => all.filter((o) => o.variable === v).sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0];
-            return { m, s: await memberState(m.id), diary, drowsy: latest('drowsiness'), hr: latest('resting_hr'), bp: latest('bp') };
-        }),
-    );
-    const week = Array.from({ length: 7 }, (_, i) => day - 6 + i);
     const fromGround = (await repo.groundNotes(ws())).filter((n) => n.deliveredAt);
     const houston = html`<section class="card houston" id="houston" aria-labelledby="hou-h">
       <div class="card-h"><h3 id="hou-h">From Houston</h3><small>${app.groundLink ? 'Ground link up' : 'Ground link offline · new notes wait on Earth'}</small></div>
@@ -139,7 +120,7 @@ export async function renderCrew(): Promise<Html> {
           : html`<p class="muted small">No note from the flight surgeon. Houston only sees the reports you choose to send.</p>`}
     </section>`;
     return html`
-    ${pageHead('Review queue', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${simTag()}${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
+    ${pageHead('Review queue', html`${repo.memberStatic(ws(), me()).alias} · crew medical officer`, html`<div class="head-tags">${c.rules.length ? demoRuleTag() : badge('No mission rule configured', 'muted', 'info')}</div>`)}
     <div class="cmo-top">
   <section class="card review-queue" aria-labelledby="queue-h">
       <div class="card-h"><div><span class="mission-kicker">On-board care</span><h2 id="queue-h">Review queue</h2></div>${badge(`${queue.filter(i => !i.waitingForCrew).length} ready for review`, 'info', 'review')}</div>
@@ -147,28 +128,55 @@ export async function renderCrew(): Promise<Html> {
       ${queue.length ? html`<div class="review-list">${queue.map(i => html`<a class="review-row" href="${i.href}" data-link><span class="av">${repo.memberStatic(ws(),i.crewId).initials}</span><span><b>${repo.memberStatic(ws(),i.crewId).alias}</b><span>${i.reason}</span><small class="mono">${utcStamp(Date.parse(i.at))} · Day ${missionDay(Date.parse(i.at),c.epoch)}</small></span>${badge(i.status, i.waitingForCrew ? 'muted' : 'review', i.waitingForCrew ? 'clock' : 'review')}<span class="rr-act">${i.waitingForCrew ? 'Waiting for the crew' : i.status === 'Response received' ? 'Read the reply' : i.href.includes('symptom=') ? 'Look at the photo' : 'Review the evidence'}${icon('arrow','sm')}</span></a>`)}</div>` : html`<div class="empty-q">${icon('ok')}<p>No review waiting. New observations and crew replies appear here.</p></div>`}
     </section>
       ${houston}
+    </div>`;
+}
+
+async function renderTeammates(): Promise<Html> {
+    const day = missionDay(app.now, cfg().epoch);
+    const [members, queue] = await Promise.all([repo.members(ws()), reviewItems(ws())]);
+    const rows = await Promise.all(members.filter(m => m.role !== 'ground').map(async m => {
+        const [all, s, task] = await Promise.all([repo.currentObservations(ws(), m.id), memberState(m.id), repo.todaysTask(ws(), m.id, app.now)]);
+        const diary = new Map(all.filter(o => o.variable === 'sleep_main' && o.method === SLEEP_RULE.method).map(o => [o.missionDay, o]));
+        const latest = (v: Variable) => all.filter(o => o.variable === v).sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0];
+        return { m, s, task, diary, drowsy: latest('drowsiness'), hr: latest('resting_hr'), bp: latest('bp'), mood: latest('mood') };
+    }));
+    const week = Array.from({ length: 7 }, (_, i) => day - 6 + i);
+    const expected = rows.filter(({ task, s }) => (task && task.ev.state !== 'off') || s.ci?.status === 'submitted');
+    const submitted = expected.filter(({ s }) => s.ci?.status === 'submitted').length;
+    const overdue = expected.filter(({ task, s }) => task?.ev.state === 'due' && s.ci?.status !== 'submitted');
+    const review = queue.filter(i => !i.waitingForCrew);
+    const watchCount = overdue.length + review.length;
+    const nights = rows.flatMap(({ diary }) => week.map(d => diary.get(d)?.value)).filter((v): v is number => v != null);
+    const average = nights.length ? formatMinutes(Math.round(nights.reduce((a, b) => a + b, 0) / nights.length)) : null;
+    const reading = (o: { missionDay: number; quality: string } | undefined, value: string | number | undefined) =>
+        value == null || !o || o.quality === 'not-recorded' ? '—' : html`${value}${o.missionDay < day ? html`<sup title="Day ${o.missionDay}">*</sup>` : ''}`;
+    return html`
+    ${pageHead('Team', html`Crew medical officer · ${repo.memberStatic(ws(), me()).alias}`)}
+    <div class="teammates-summary">
+      <span>${expected.length ? html`Today · <b>${submitted} of ${expected.length} check-ins</b>` : 'No check-ins scheduled today'}${overdue.length ? html` · <span class="teammates-overdue">${overdue.map(({ m }) => m.shortName).join(', ')} overdue</span>` : ''}</span>
+      <a href="/check-in/crew" data-link>Crew check-ins ${icon('arrow', 'sm')}</a>
     </div>
-    <h2 class="sec-h">Crew at a glance</h2>
-    <div class="cmo-board">
+    <div class="teammates-grid">
+      <div class="cmo-board">
         <section class="card board" aria-labelledby="crew-h">
           <div class="card-h"><h3 id="crew-h">Crew board</h3><small>Latest values · select a member for the file</small></div>
           <div class="bd" role="table" aria-label="Crew board">
-            <div class="bd-hd" role="row"><span role="columnheader">Member</span><span role="columnheader">Check-in</span><span role="columnheader">Last night</span><span role="columnheader">Drowsy</span><span role="columnheader">Rest HR</span><span role="columnheader">BP</span><span role="columnheader">State</span></div>
-            ${rows.map(({ m, s, diary, drowsy, hr, bp }) => {
+            <div class="bd-hd" role="row"><span role="columnheader">Member</span><span role="columnheader">Sleep</span><span role="columnheader">Rest HR</span><span role="columnheader">BP</span><span role="columnheader">Mood</span><span role="columnheader">Drowsy</span><span role="columnheader">Check-in</span></div>
+            ${rows.map(({ m, s, task, diary, drowsy, hr, bp, mood }) => {
                 const last = [...diary.values()].sort((a, b) => b.missionDay - a.missionDay)[0];
                 const tone = s.pendingAlert ? 'al' : s.reviewReq || s.symptoms || s.ci?.status !== 'submitted' ? 'wt' : 'ok';
                 return html`<a class="bd-row" role="row" href="/crew/${m.id}" data-link>
                   <span class="bd-who" role="cell"><span class="av ${tone}">${m.initials}</span><span><b>${m.alias}</b><small>${m.title}</small></span></span>
-                  <span data-label="Check-in" class="cell ci ${s.ci?.status === 'submitted' ? '' : 'miss'}" role="cell">${s.ci?.status === 'submitted' ? hhmm(Date.parse(s.ci.submittedAt!)) : 'Not yet'}</span>
-                  <span data-label="Last night" class="cell ${last ? (sleepZone(last.value) ?? '').replace('ok', '') : 'na'}" role="cell">${last ? `${Math.floor((last.value ?? 0) / 60)}h${String((last.value ?? 0) % 60).padStart(2, '0')}` : '—'}</span>
-                  <span data-label="Drowsy" class="cell ${drowsy ? '' : 'na'}" role="cell">${drowsy?.value ?? '—'}</span>
-                  <span data-label="Rest HR" class="cell ${hr ? '' : 'na'}" role="cell">${hr?.value ?? '—'}</span>
-                  <span data-label="BP" class="cell ${bp ? (bp.quality === 'check' ? 'wt' : '') : 'na'}" role="cell">${bp ? `${bp.value}/${bp.value2}` : '—'}</span>
-                  <span class="bd-state" role="cell">${s.state}${s.outOfRange.length ? html`<small>${s.outOfRange.length} lab outside interval</small>` : ''}</span>
+                  <span data-label="Sleep" class="cell ${sleepZone(last?.value ?? null) ?? 'na'}" role="cell">${reading(last, last?.value == null ? undefined : formatMinutes(last.value))}</span>
+                  <span data-label="Rest HR" class="cell ${hr ? '' : 'na'}" role="cell">${reading(hr, hr?.value ?? undefined)}</span>
+                  <span data-label="BP" class="cell ${bp ? (bp.quality === 'check' ? 'wt' : '') : 'na'}" role="cell">${reading(bp, bp?.value != null && bp.value2 != null ? `${bp.value}/${bp.value2}` : undefined)}</span>
+                  <span data-label="Mood" class="cell ${mood ? '' : 'na'}" role="cell">${reading(mood, mood?.value == null ? undefined : `${mood.value}/5`)}</span>
+                  <span data-label="Drowsy" class="cell ${drowsy ? '' : 'na'}" role="cell">${reading(drowsy, drowsy?.value ?? undefined)}</span>
+                  <span data-label="Check-in" class="cell ci ${task?.ev.state === 'due' ? 'miss' : ''}" role="cell">${s.ci?.status === 'submitted' ? hhmm(Date.parse(s.ci.submittedAt!)) : task && task.ev.state !== 'off' ? 'Not yet' : '—'}</span>
                 </a>`;
             })}
           </div>
-          <div class="bd-leg"><span><i class="lg-c ok"></i>In zone</span><span><i class="lg-c wt"></i>To watch</span><span><i class="lg-c al"></i>Out of zone</span><span><i class="lg-c na"></i>No reading</span><span class="bd-leg-n">Demo zones</span></div>
+          <div class="bd-leg"><span><i class="lg-c ok"></i>In zone</span><span><i class="lg-c wt"></i>To watch</span><span><i class="lg-c al"></i>Out of zone</span><span><i class="lg-c na"></i>No reading</span><span>* Earlier reading</span><span class="bd-leg-n">Demo zones</span></div>
         </section>
         <section class="card" aria-labelledby="sl-h">
           <div class="card-h"><h3 id="sl-h">Crew sleep · 7 nights</h3><small>Demo zones · 7 h and more, 6 to 7 h, under 6 h</small></div>
@@ -179,8 +187,16 @@ export async function renderCrew(): Promise<Html> {
                 return html`<span class="slc ${o ? (sleepZone(o.value) ?? '').replace('ok', '') : 'na'}" role="cell">${o ? (o.value === null ? 'n/r' : `${Math.floor(o.value / 60)}h${String(o.value % 60).padStart(2, '0')}`) : '—'}</span>`;
             })}`)}
           </div>
-          <p class="sl-foot">Diary nights only; actigraphy stays a separate series in each member file.</p>
+          <p class="sl-foot">${average ? html`Crew average · <b>${average}</b> across ${nights.length} recorded diary nights.` : 'No diary nights recorded for this week.'}</p>
         </section>
+      </div>
+      <section class="card teammates-watch" aria-labelledby="watch-h">
+        <div class="card-h"><div><h3 id="watch-h">Duty watch</h3><small>Day ${day} · ${watchCount} open</small></div>${badge(String(watchCount), watchCount ? 'review' : 'ok', 'clock')}</div>
+        ${watchCount ? html`<ul class="watch-list">
+          ${overdue.map(({ m, task }) => html`<li><a href="/check-in/crew#checkin-${m.id}" data-link>${icon('clock', 'sm')}<span><b>${m.alias} · Check-in overdue</b><small>Due ${hhmm(task!.ev.effectiveDue)} UTC</small></span>${icon('arrow', 'sm')}</a></li>`)}
+          ${review.map(i => html`<li><a href="${i.href}" data-link>${icon('review', 'sm')}<span><b>${repo.memberStatic(ws(), i.crewId).alias}</b><small>${i.reason}</small></span>${icon('arrow', 'sm')}</a></li>`)}
+        </ul>` : html`<p class="muted small">No check-ins overdue or reviews waiting.</p>`}
+      </section>
     </div>`;
 }
 
@@ -198,8 +214,8 @@ async function renderMember(crewId: string): Promise<Html> {
     const diary = new Map(obs.filter((o) => o.variable === 'sleep_main' && o.method === SLEEP_RULE.method).map((o) => [o.missionDay, o]));
 
     return html`
-    <p class="crumbs"><a href="/crew" data-link>${icon('back')}Review queue</a></p>
-    ${pageHead(m.alias, html`${m.title} · member file · Day ${day}`, html`<div class="head-tags">${simTag()}<a class="btn btn-ghost btn-small" href="/trends?member=${crewId}" data-link>${icon('trends')}Trends</a><a class="btn btn-ghost btn-small" href="/reports?member=${crewId}" data-link>${icon('report')}Report</a></div>`)}
+    <p class="crumbs"><a href="/crew/teammates" data-link>${icon('back')}Team</a> <a href="/crew" data-link>Review queue</a></p>
+    ${pageHead(m.alias, html`${m.title} · member file · Day ${day}`, html`<div class="head-tags"><a class="btn btn-ghost btn-small" href="/trends?member=${crewId}" data-link>${icon('trends')}Trends</a><a class="btn btn-ghost btn-small" href="/reports?member=${crewId}" data-link>${icon('report')}Report</a></div>`)}
 
     <div class="grid-2 med-row">
       ${medicalCard(crewId)}
@@ -212,7 +228,7 @@ async function renderMember(crewId: string): Promise<Html> {
           <h2 id="al-${a.startDay}">Sleep trend needs review</h2>
           <p>${SLEEP_RULE.label}: ${SLEEP_RULE.description} Days ${a.startDay}–${a.endDay}.</p>
           <ol class="evidence">${ev.map((o) => html`<li><span>Day ${o.missionDay}</span><b class="mono">${formatMinutes(o.value)}</b><small>${o.method} · ${sourceLabel(o)} · ${hhmm(Date.parse(o.measuredAt))} UTC</small></li>`)}</ol>
-          <p class="fine">Context: drowsiness ${ev.map((o) => obs.find((x) => x.variable === 'drowsiness' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–9), mood ${ev.map((o) => obs.find((x) => x.variable === 'mood' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–5). Demo rule, not a clinical threshold. ${simTag()}</p>
+          <p class="fine">Context: drowsiness ${ev.map((o) => obs.find((x) => x.variable === 'drowsiness' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–9), mood ${ev.map((o) => obs.find((x) => x.variable === 'mood' && x.missionDay === o.missionDay)?.value ?? '—').join(' · ')} (1–5). Demo rule, not a clinical threshold.</p>
           ${a.reviews.map((r) => html`<div class="req-answer"><b>Review · ${repo.memberStatic(ws(), r.byId).alias}</b> <span class="mono">${utcStamp(Date.parse(r.at))}</span><p>${r.note}</p>${r.requestId ? html`<small>Follow-up request sent.</small>` : ''}</div>`)}
           ${a.status === 'needs-review' ? html`
           <details class="protocol" open>

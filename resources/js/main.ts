@@ -1,11 +1,11 @@
 import { mountEmblem, scrollEmblem, spinEmblem } from './components/brand';
-import { previewBar, renderShell } from './components/shell';
+import { renderShell } from './components/shell';
 import { toast } from './components/ui';
 import * as repo from './data/repo';
 import { WORKSPACES } from './demo/config';
 import { MINUTE_MS, missionDay, timeOnDay } from './domain/time';
 import type { Role, WorkspaceId } from './domain/types';
-import { renderEntry } from './features/entry';
+import { initHomeTheme, prepareHomeScene, renderEntry } from './features/entry';
 import { maybeShowGuide } from './features/help';
 import { html, type Html } from './lib/html';
 import { registerServiceWorker } from './offline/register';
@@ -45,7 +45,7 @@ function deviceFrame(): HTMLIFrameElement | null {
     return root.querySelector<HTMLIFrameElement>('iframe.device-frame');
 }
 
-type FrameMessage = { type: 'hexta-refresh' } | { type: 'hexta-navigate'; href: string } | { type: 'hexta-rendered'; href: string };
+type FrameMessage = { type: 'hexta-refresh' | 'hexta-sign-out' } | { type: 'hexta-navigate'; href: string } | { type: 'hexta-rendered'; href: string };
 
 function postToFrame(msg: FrameMessage): void {
     deviceFrame()?.contentWindow?.postMessage(msg, location.origin);
@@ -55,18 +55,15 @@ function postToFrame(msg: FrameMessage): void {
 let fromFrame = false;
 
 async function renderDevice(): Promise<void> {
-    const bar = (await previewBar()).value;
     const frame = deviceFrame();
     if (frame && frame.dataset.viewport === app.viewport) {
-        const old = root.querySelector('.preview');
-        if (old) old.outerHTML = bar;
         if (!fromFrame) postToFrame({ type: 'hexta-refresh' });
         return;
     }
     const vp = app.viewport as Exclude<Viewport, 'auto'>;
     const [w, h] = VIEWPORT_SIZE[vp];
     const src = location.pathname + location.search + location.hash;
-    root.innerHTML = `${bar}<div class="device-stage"><iframe class="device-frame vp-${vp}" data-viewport="${vp}" style="--w:${w}px;--h:${h}px" src="${src.replace(/"/g, '&quot;')}" title="HEXTA in a ${vp} frame (${w} × ${h})"></iframe></div>`;
+    root.innerHTML = `<div class="device-stage"><iframe class="device-frame vp-${vp}" data-viewport="${vp}" style="--w:${w}px;--h:${h}px" src="${src.replace(/"/g, '&quot;')}" title="HEXTA in a ${vp} frame (${w} × ${h})"></iframe></div>`;
     root.removeAttribute('data-booting');
     document.title = `HEXTA · ${vp} preview`;
 }
@@ -83,6 +80,7 @@ window.addEventListener('message', (e: MessageEvent<FrameMessage>) => {
     const msg = e.data;
     if (EMBEDDED && msg.type === 'hexta-refresh') void reloadSharedState().then(() => render());
     else if (EMBEDDED && msg.type === 'hexta-navigate') void reloadSharedState().then(() => navigate(msg.href));
+    else if (!EMBEDDED && msg.type === 'hexta-sign-out' && e.source === deviceFrame()?.contentWindow) signOut();
     else if (!EMBEDDED && msg.type === 'hexta-rendered' && isDeviceMode()) {
         history.replaceState(null, '', msg.href);
         parseRoute();
@@ -115,13 +113,21 @@ export async function render(isNavigation = false): Promise<void> {
     rendering = true;
     try {
         if (!app.ws || app.route.segments.length === 0) {
+            // Status polls must not rebuild the home page and reset its tabs, theme or keyboard focus.
+            if (!isNavigation && !root.hasAttribute('data-booting') && root.querySelector('.home')) return;
             const entry = (await renderEntry()).value;
+            let introPlaying = false;
             await withTransition(() => {
                 root.innerHTML = entry;
+                if (!EMBEDDED) {
+                    const returningFromLogin = document.referrer && new URL('/login', location.origin).href === document.referrer;
+                    const showIntro = app.route.segments.length === 0 && !location.hash && !returningFromLogin;
+                    introPlaying = prepareHomeScene(root, showIntro);
+                }
             }, isNavigation);
             root.removeAttribute('data-booting');
             document.title = 'HEXTA · Crew health';
-            if (isNavigation) (root.querySelector('h1') as HTMLElement | null)?.focus();
+            if (isNavigation && !introPlaying) (root.querySelector('h1') as HTMLElement | null)?.focus();
             if (EMBEDDED) parent.postMessage({ type: 'hexta-rendered', href: location.pathname + location.search + location.hash }, location.origin);
             return;
         }
@@ -140,9 +146,12 @@ export async function render(isNavigation = false): Promise<void> {
         // a background refresh must not close a menu or panel the user has open (scenario controls, status, guide)
         const openPanels = isNavigation ? [] : [...root.querySelectorAll<HTMLDetailsElement>('details[open]')].map((d) => d.className).filter(Boolean);
         await withTransition(() => {
+            const sidebarOpen = !isNavigation && !!root.querySelector('.app.drawer');
             root.innerHTML = html;
+            if (sidebarOpen) root.querySelector('.app')?.classList.add('drawer');
             if (edits) restoreEdits(edits);
             for (const cls of openPanels) root.querySelector<HTMLDetailsElement>(`details[class="${cls}"]`)?.setAttribute('open', '');
+            fitSidebar();
         }, isNavigation);
         root.removeAttribute('data-booting');
         const title = root.querySelector('#page-title')?.textContent;
@@ -153,7 +162,7 @@ export async function render(isNavigation = false): Promise<void> {
         if (emblem) mountEmblem(emblem);
         if (EMBEDDED) parent.postMessage({ type: 'hexta-rendered', href: location.pathname + location.search + location.hash }, location.origin);
         if (isNavigation) {
-            window.scrollTo(0, 0);
+            if (!document.getElementById(location.hash.slice(1))) window.scrollTo(0, 0);
             (root.querySelector('#page-title') as HTMLElement | null)?.focus({ preventScroll: true });
             void maybeShowGuide();
         } else {
@@ -206,7 +215,50 @@ function restoreEdits(edits: Map<string, string | boolean>): void {
     });
 }
 
+/** Keep the profile at the viewport bottom, including when the preview bar wraps or scrolls away. */
+function fitSidebar(): void {
+    const side = root?.querySelector<HTMLElement>('.app > .side');
+    if (!side || !matchMedia('(min-width: 700px)').matches) return;
+    const shell = side.closest<HTMLElement>('.app')!;
+    setSidebarButton(shell, innerWidth < 1100 ? shell.classList.contains('drawer') : !app.rail);
+    const context = document.createElement('canvas').getContext('2d');
+    if (context) {
+        const width = (element: Element | null) => {
+            if (!element) return 0;
+            context.font = getComputedStyle(element).font;
+            return context.measureText(element.textContent?.trim() ?? '').width;
+        };
+        const navigation = Math.max(0, ...[...side.querySelectorAll('.sb-item')].map(link =>
+            width(link.querySelector('.sb-lbl')) + 76 + (link.querySelector('.sb-badge') ? 34 : 0)));
+        const profile = Math.max(width(side.querySelector('.profile-name > b')), width(side.querySelector('.profile-name > span')), width(side.querySelector('.sb-link .link')) + 24) + 84;
+        shell.style.setProperty('--sidebar-width', `${Math.ceil(Math.max(192, navigation, profile))}px`);
+    }
+    const top = Math.max(0, side.getBoundingClientRect().top);
+    side.style.height = `${Math.max(0, window.innerHeight - top)}px`;
+}
+
+function setSidebarButton(shell: HTMLElement, open: boolean): void {
+    const button = shell.querySelector<HTMLElement>('.brand-toggle');
+    const label = open ? 'Collapse the menu' : 'Expand the menu';
+    button?.setAttribute('aria-expanded', String(open));
+    button?.setAttribute('title', label);
+    const sr = button?.querySelector('.sr-only');
+    if (sr) sr.textContent = label;
+}
+
+function animateSidebar(shell: HTMLElement, open: boolean): void {
+    setSidebarButton(shell, open);
+    // Read the actual width transition, including its shortened duration on reversal.
+    const transition = shell.getAnimations().find(a =>
+        'transitionProperty' in a && a.transitionProperty === 'grid-template-columns');
+    if (transition) spinEmblem(open, transition);
+}
+
+window.addEventListener('resize', fitSidebar);
+void document.fonts.ready.then(fitSidebar);
+
 function mountCurrent(): void {
+    fitSidebar();
     const hash = location.hash.slice(1);
     if (hash) document.getElementById(hash)?.scrollIntoView();
     root.querySelectorAll<HTMLElement>('[data-mount]').forEach((el) => {
@@ -249,7 +301,18 @@ async function enterWorkspace(id: WorkspaceId, role: Role = 'astronaut'): Promis
     app.loseNextReceipt = await repo.kvGet(id, 'loseNextReceipt', false);
 }
 
+function signOut(): void {
+    if (EMBEDDED) {
+        parent.postMessage({ type: 'hexta-sign-out' }, location.origin);
+        return;
+    }
+    app.ws = null;
+    writePref('quinta.ws', null);
+    navigate('/', true);
+}
+
 registerActions({
+    'sign-out': signOut,
     'enter-demo': async () => {
         await enterWorkspace('demo');
         navigate('/overview');
@@ -327,32 +390,22 @@ registerActions({
         await reloadSharedState();
         await render(true);
     },
-    'rail-toggle': async () => {
-        // tablet widths (700–1099 px) always show the icon rail: the logo opens the full menu over the content
-        if (innerWidth >= 700 && innerWidth < 1100) {
-            const shell = root.querySelector<HTMLElement>('.app');
-            const open = !shell?.classList.contains('drawer');
-            shell?.classList.toggle('drawer', open);
-            root.querySelector('.brand-toggle')?.setAttribute('aria-expanded', String(open));
+    'rail-toggle': () => {
+        const shell = root.querySelector<HTMLElement>('.app');
+        if (!shell || innerWidth < 700) return;
+        if (innerWidth < 1100) {
+            animateSidebar(shell, shell.classList.toggle('drawer'));
             return;
         }
         app.rail = !app.rail;
         writePref('hexta.rail', app.rail ? '1' : '0');
         // fold in place (not a re-render) so the grid width and the labels can animate
-        const shell = root.querySelector<HTMLElement>('.app');
-        const btn = root.querySelector<HTMLElement>('.brand-toggle');
-        const label = app.rail ? 'Expand the menu' : 'Collapse the menu';
-        shell?.classList.toggle('rail', app.rail);
-        shell?.classList.toggle('unfold', !app.rail);
-        btn?.setAttribute('aria-expanded', String(!app.rail));
-        btn?.setAttribute('title', label);
-        const sr = btn?.querySelector('.sr-only');
-        if (sr) sr.textContent = label;
-        spinEmblem(!app.rail);
+        shell.classList.toggle('rail', app.rail);
+        animateSidebar(shell, !app.rail);
     },
     'dismiss-banner': async () => {
         await repo.dismiss(ws(), me(), app.now);
-        toast('Banner hidden. The check-in stays in Today’s plan and Notifications.');
+        toast('Banner hidden. You can still open Daily Check-in from navigation.');
         await render();
     },
 });
@@ -361,7 +414,7 @@ registerActions({
 
 /** Chip drop-downs (<details data-pop>): one open at a time, closed by an outside click, a choice inside, or Escape. */
 function closePops(except?: Element | null): void {
-    root.querySelectorAll<HTMLDetailsElement>('details[data-pop][open]').forEach((d) => {
+    document.querySelectorAll<HTMLDetailsElement>('details[data-pop][open]').forEach((d) => {
         if (d !== except) d.open = false;
     });
 }
@@ -372,7 +425,7 @@ document.addEventListener('click', (e) => {
 }, true);
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const open = root.querySelector<HTMLDetailsElement>('details[data-pop][open]');
+    const open = document.querySelector<HTMLDetailsElement>('details[data-pop][open]');
     if (!open) return;
     open.open = false;
     open.querySelector('summary')?.focus();
@@ -434,6 +487,7 @@ window.addEventListener(
         const y = window.scrollY;
         scrollEmblem(y - lastScrollY);
         lastScrollY = y;
+        fitSidebar();
     },
     { passive: true },
 );
@@ -453,13 +507,15 @@ async function boot(): Promise<void> {
         void render();
     });
     window.setInterval(() => void tick(), 5000);
-    // live clock text in Explore (real time) without full re-render
-    window.setInterval(() => {
-        if (app.ws === 'explore') {
-            const el = document.querySelector('.mission .day .mono');
-            if (el) el.textContent = new Date().toISOString().slice(11, 16);
-        }
-    }, 1000);
+    // Live UTC clock, ticking every second with the real time (HEXTA mockup), without a full re-render.
+    const paintClock = () => {
+        const now = new Date().toISOString().slice(11, 19);
+        document.querySelector('.mission .eb-day .mono')?.replaceChildren(now);
+        const side = document.querySelector('.sb-clock');
+        if (side) side.textContent = `${now} UTC`;
+    };
+    paintClock();
+    window.setInterval(paintClock, 1000);
 }
 
 if (root) void boot().catch((err) => {
@@ -467,19 +523,22 @@ if (root) void boot().catch((err) => {
     root.innerHTML = html`<div class="boot"><h1>HEXTA could not start</h1><p>Local storage may be blocked in this browser window (private mode or site data disabled). ${String(err)}</p></div>`.value;
 });
 
+if (!root && document.querySelector('.auth-main')) initHomeTheme();
+
 if (!root && document.querySelector('.account-app')) void import('./features/account-drafts').then(m => m.mountAccountDrafts());
 
-/** Tablet menu drawer: closes on Escape or a click outside the sidebar. */
+/** Tablet menu closes on Escape or after choosing a destination. */
 function closeDrawer(): void {
+    if (!root) return;
     const shell = root.querySelector<HTMLElement>('.app.drawer');
     if (!shell) return;
     shell.classList.remove('drawer');
-    root.querySelector('.brand-toggle')?.setAttribute('aria-expanded', 'false');
+    animateSidebar(shell, false);
 }
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeDrawer();
 });
 document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
-    if (!t.closest('.side') || t.closest('.sb-item, .sb-today')) closeDrawer();
+    if (t.closest('.sb-item')) closeDrawer();
 }, true);

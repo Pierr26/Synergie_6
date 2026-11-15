@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 /** Entry screen: guided demo is the default mode; pick a role card. */
 async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
     await page.goto('/');
-    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
-    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+    await page.getByRole('radio', { name: mode === 'explore' ? 'Free exploration' : 'Guided demo' }).click();
+    await page.locator(`.home-role[data-role="${roleId}"]`).click();
+    await page.locator('.home-entry-tools .home-enter').click();
 }
 
 /** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */

@@ -24,6 +24,12 @@ export interface CheckinForm {
     hr: string;
     hrRest: 'yes' | 'no' | 'unknown';
     hrMethod: string;
+    energy?: number | null;
+    stress?: number | null;
+    waterMl?: number | null;
+    urineShade?: number | null;
+    breakfast?: string;
+    appetite?: string;
 }
 
 export interface CheckinRecord {

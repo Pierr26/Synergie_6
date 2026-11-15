@@ -26,12 +26,14 @@ async function saveCheckin() {
 describe('the shared astronaut and medical officer experience', () => {
     it('Today moves from check-in due to saved confirmation and review pending using actual records', async () => {
         await repo.syncReminders('demo','moreau',now);
-        expect((await renderOverview()).value).toContain('Start check-in');
+        const due = (await renderOverview()).value;
+        expect(due).toContain('Check-in due');
+        expect(due).not.toContain('href="/check-in"');
         await saveCheckin();
         const page = (await renderOverview()).value;
         expect(page).toContain('Crew review pending');
-        expect(page).toContain('Today’s summary');
-        expect(page).not.toContain('>Start check-in');
+        expect(page).toContain('Check-in saved');
+        expect(page).not.toContain('href="/check-in"');
         const queue = await reviewItems('demo');
         expect(queue).toHaveLength(1);
         expect(queue[0].crewId).toBe('moreau');
