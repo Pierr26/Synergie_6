@@ -1,4 +1,4 @@
-# QUINTA — crew health, even when the ground link drops
+# HEXTA — crew health, even when the ground link drops
 
 Synergy 5 · NASA Space Apps Challenge 2026 (Casablanca) · *Create Health Monitoring Software for Astronauts on Space Missions*.
 
@@ -8,7 +8,9 @@ The astronaut logs sleep and drowsiness in a short daily check-in. The crew medi
 
 ## Stack
 
-- **Laravel 13** (PHP ≥ 8.3, tested on 8.5) serves the single Blade document (`resources/views/app.blade.php`), the compiled assets, and a separate **Laravel test receiver** (`PUT /api/v1/reports/{uuid}`).
+- **Laravel 13** (PHP ≥ 8.3, tested on 8.4 and 8.5) serves the single Blade document (`resources/views/app.blade.php`), the compiled assets and the **HEXTA API** (`/api/v1`, documented at `/docs/api`).
+- **MongoDB Atlas** (or a local MongoDB) stores the API side: versioned observations, check-ins, reminders, notifications, follow-ups, SLEEP-001 alerts, lab results, report snapshots, the ground receiver (`PUT /api/v1/reports/{uuid}`, same UUID + same content returns the original receipt, different content returns 409), NASA OSDR reference data and the knowledge base. Accounts and sessions stay in SQLite.
+- **Sync**: the web app keeps writing to IndexedDB first, then `resources/js/data/sync.ts` mirrors check-ins, spot measurements, lab results, follow-up requests, alert reviews and the demo clock to the API through a persistent outbox, retried when the browser is back online.
 - **Vite 8 + TypeScript**, no UI framework: client-side routing over the same cached document.
 - **Dexie / IndexedDB** for every record (observations, check-ins, tasks, notifications, requests, alerts, lab results, reports, queue). Workspace isolation on every key and every query.
 - **Service worker** (`public/sw.js`, generated at build from the Vite manifest), versioned precache, offline reload of any internal view.
@@ -20,6 +22,7 @@ The astronaut logs sleep and drowsiness in a short daily check-in. The crew medi
 |---|---|---|
 | PHP | 8.5.12 (`^8.3` required) | extensions: pdo_sqlite, mbstring, openssl, tokenizer, xml, ctype, json |
 | Composer | 2.11 | |
+| MongoDB | 7 or 8 (local) or an Atlas cluster | PHP extension `mongodb` 2.5 required |
 | Node.js | 22 LTS (npm 10) | |
 | Chromium | any recent | only for the end-to-end tests |
 
@@ -30,7 +33,8 @@ PHP 8.5, Composer and Node 22 are now installed on the build machine: `npm run b
 ```bash
 composer install
 cp .env.example .env && php artisan key:generate
-php artisan migrate            # SQLite table for the Laravel test receiver only
+php artisan migrate            # SQLite (accounts, sessions) + MongoDB indexes
+php artisan db:seed            # NASA OSDR data, knowledge base, demo and explore workspaces in MongoDB
 npm install
 npm run build                  # tsc --noEmit + vite build + public/sw.js
 php artisan serve              # http://127.0.0.1:8000

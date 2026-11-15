@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\ReceivedReport;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ReportReceiverTest extends TestCase
 {
-    use RefreshDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->freshMongoDatabase();
+    }
 
     /**
      * @return array{content: string}
@@ -34,9 +37,9 @@ class ReportReceiverTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('reportId', $id)
-            ->assertJsonPath('receiver', 'Laravel test receiver')
+            ->assertJsonPath('receiver', 'MongoDB Atlas ground receiver')
             ->assertJsonPath('replayed', false);
-        $this->assertDatabaseHas('received_reports', ['report_id' => $id]);
+        $this->assertNotNull($this->mongoCollection('reports')->findOne(['_id' => $id]));
     }
 
     public function test_same_uuid_and_same_content_returns_the_original_receipt(): void
@@ -50,7 +53,7 @@ class ReportReceiverTest extends TestCase
             ->assertJsonPath('receiptId', $first['receiptId'])
             ->assertJsonPath('receivedAt', $first['receivedAt'])
             ->assertJsonPath('replayed', true);
-        $this->assertSame(1, ReceivedReport::query()->count());
+        $this->assertSame(1, $this->mongoCollection('reports')->countDocuments());
     }
 
     public function test_same_uuid_with_different_content_is_a_conflict(): void
@@ -75,8 +78,9 @@ class ReportReceiverTest extends TestCase
         $id = (string) Str::uuid();
         $first = $this->putJson("/api/v1/reports/{$id}", $this->payload($id))->json();
 
-        $stored = ReceivedReport::query()->findOrFail($id);
+        $stored = $this->mongoCollection('reports')->findOne(['_id' => $id]);
 
-        $this->assertSame($first['receiptId'], $stored->receipt_id);
+        $this->assertSame($first['receiptId'], $stored['receipt']['receiptId']);
+        $this->assertSame(hash('sha256', $this->payload($id)['content']), $stored['sha256']);
     }
 }

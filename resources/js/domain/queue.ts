@@ -12,7 +12,7 @@ export type ReceiverId = 'simulated-ground' | 'laravel-test';
 
 export const RECEIVER_LABEL: Record<ReceiverId, string> = {
     'simulated-ground': 'Simulated ground receiver',
-    'laravel-test': 'Laravel test receiver',
+    'laravel-test': 'MongoDB Atlas ground receiver',
 };
 
 export interface Receipt {

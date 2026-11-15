@@ -9,6 +9,7 @@ import { initHomeTheme, prepareHomeScene, renderEntry } from './features/entry';
 import { maybeShowGuide } from './features/help';
 import { html, type Html } from './lib/html';
 import { registerServiceWorker } from './offline/register';
+import { startSync } from './data/sync';
 import { actions, registerActions } from './router-actions';
 import { app, EMBEDDED, homeFor, me, syncPrefs, VIEWPORT_SIZE, writePref, ws, type Viewport } from './state';
 import { routes } from './routes';
@@ -496,6 +497,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 async function boot(): Promise<void> {
+    startSync();
     initFx();
     bus.navigate = navigate;
     bus.refresh = () => render();

@@ -121,7 +121,7 @@ function queuePanel(r: ReportRow): Html {
       })}</ol>
       ${q.state === 'not-queued' ? html`
         <p class="hint">Queuing is your decision. The report keeps this ID and this frozen content on every attempt.</p>
-        <div class="field"><label for="receiver">Receiver</label><select id="receiver"><option value="simulated-ground">Simulated ground receiver (default, works without the server)</option><option value="laravel-test">Laravel test receiver (same server, needs device network)</option></select></div>
+        <div class="field"><label for="receiver">Receiver</label><select id="receiver"><option value="simulated-ground">Simulated ground receiver (default, works without the server)</option><option value="laravel-test">MongoDB Atlas ground receiver (HEXTA API, needs device network)</option></select></div>
         <button type="button" class="btn btn-primary" data-action="report-queue" data-id="${r.id}">${icon('send')}Queue for ground</button>` : ''}
       ${q.state === 'queued' && q.receiver === 'simulated-ground' && !app.groundLink ? html`<p class="notice">${icon('linkoff')}Ground link offline (simulated). The report waits in the queue on this device.</p>` : ''}
       ${q.state === 'queued' && q.receiver === 'laravel-test' && !app.browserOnline ? html`<p class="notice">${icon('device')}Device offline. The report waits until the network is back.</p>` : ''}
