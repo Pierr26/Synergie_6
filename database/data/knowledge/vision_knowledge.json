@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "description": "HEXTA vision agent knowledge base: urine colour, skin findings, webcam heart rate and photo capture.",
+    "generated": "2026-11-14",
+    "language": "en",
+    "note": "Entries marked validated=false are HEXTA prototype guidance. They must be replaced by a validated mission medical policy before any operational use."
+  },
+  "documents": [
+    {
+      "id": "vision-urine-color-scale",
+      "title": "Urine colour chart (8-point scale) as a hydration indicator",
+      "source": "Armstrong LE et al. Urinary indices of hydration status. Int J Sport Nutr. 1994;4(3):265-279. Armstrong LE et al. Urinary indices during dehydration, exercise, and rehydration. Int J Sport Nutr. 1998;8(4):345-355.",
+      "url": null,
+      "authority": "Peer-reviewed study (terrestrial athletes)",
+      "validated": true,
+      "topics": ["urine_color", "hydration"],
+      "text": "The urine colour chart uses eight shades, from 1 (very pale yellow) to 8 (brownish green). In studies of healthy athletes on Earth, urine colour correlated with urine specific gravity and osmolality. Lower scores (about 1 to 3) are usually seen with good hydration; higher scores suggest more concentrated urine. Colour is influenced by vitamin supplements (riboflavin gives bright yellow), some foods, medications and lighting. A single sample does not characterise hydration status: compare with fluid intake, the time of day (first morning urine is more concentrated) and previous samples taken in the same conditions."
+    },
+    {
+      "id": "vision-urine-abnormal-color",
+      "title": "Abnormal urine colours that need medical review",
+      "source": "MedlinePlus Medical Encyclopedia, U.S. National Library of Medicine. Urine - abnormal color.",
+      "url": "https://medlineplus.gov/ency/article/003139.htm",
+      "authority": "U.S. National Library of Medicine (NIH)",
+      "validated": true,
+      "topics": ["urine_color"],
+      "text": "Red, pink, brown or cola-coloured urine can be caused by foods or medicines, but also by blood, muscle breakdown products (myoglobin) or liver-related pigments (bilirubin). Cloudy or foamy urine and orange or dark brown urine that does not clear with fluids also deserve review. These colours are not interpreted by the crew alone: the crew medical officer reviews them with symptoms such as pain, fever, recent intense exercise or medication use."
+    },
+    {
+      "id": "vision-renal-stone-risk",
+      "title": "Spaceflight, hydration and kidney stone risk",
+      "source": "NASA Human Research Program. Human Research Roadmap: Risk of Renal Stone Formation.",
+      "url": "https://humanresearchroadmap.nasa.gov/",
+      "authority": "NASA Human Research Program",
+      "validated": true,
+      "topics": ["urine_color", "hydration", "spaceflight"],
+      "text": "NASA tracks the risk of renal stone formation during spaceflight. Bone loss in microgravity raises urinary calcium, and fluid intake is one of the factors that affects urine concentration. Hydration follow-up therefore matters on long missions. Urine colour can prompt a conversation about fluid intake, but it is not a measure of stone risk."
+    },
+    {
+      "id": "vision-skin-spaceflight",
+      "title": "Skin rashes and hypersensitivity during long-duration spaceflight",
+      "source": "Crucian B et al. Incidence of clinical symptoms during long-duration orbital spaceflight. Int J Gen Med. 2016;9:383-391.",
+      "url": null,
+      "authority": "Peer-reviewed study (ISS crew)",
+      "validated": true,
+      "topics": ["skin_rash", "immune", "spaceflight"],
+      "text": "A review of ISS crew medical records reported that skin rashes and hypersensitivity reactions were among the most frequent clinical events during long-duration missions. Immune changes in spaceflight are studied by NASA under the risk of altered immune response. Documenting the location, size, colour, surface and evolution of a skin finding helps the crew medical officer follow it over time."
+    },
+    {
+      "id": "vision-skin-red-flags",
+      "title": "Skin finding red flags (HEXTA prototype criteria)",
+      "source": "HEXTA prototype triage criteria, to be replaced by the mission medical policy.",
+      "url": null,
+      "authority": "HEXTA prototype - not validated",
+      "validated": false,
+      "topics": ["skin_rash"],
+      "text": "Escalate to the crew medical officer without waiting when a skin finding shows any of: blisters or peeling skin, spots that do not fade when pressed (purpura), involvement of the eyes, mouth or genitals, rapid spread over hours, swelling of the face or lips, fever, intense pain, or signs of infection such as warmth, pus or red streaks. Otherwise, document the finding with a photo taken in the same conditions every day and request a CMO review if it persists or extends."
+    },
+    {
+      "id": "vision-skin-description",
+      "title": "Describing a skin finding from a photo",
+      "source": "HEXTA prototype guidance based on standard dermatology descriptors.",
+      "url": null,
+      "authority": "HEXTA prototype - not validated",
+      "validated": false,
+      "topics": ["skin_rash", "photo_capture"],
+      "text": "A useful description lists the body site, approximate size against a reference object, distribution (single, grouped, widespread), shape, colour, surface (flat, raised, scaly, blistered, crusted) and borders. A photo cannot assess temperature, texture, pain or blanching: these must be reported by the crew member. The description must not name a diagnosis."
+    },
+    {
+      "id": "vision-rppg-method",
+      "title": "Webcam heart rate (remote photoplethysmography)",
+      "source": "Verkruysse W, Svaasand LO, Nelson JS. Remote plethysmographic imaging using ambient light. Opt Express. 2008;16(26):21434-21445. Wang W, den Brinker AC, Stuijk S, de Haan G. Algorithmic principles of remote PPG. IEEE Trans Biomed Eng. 2017;64(7):1479-1491.",
+      "url": "https://doi.org/10.1109/TBME.2016.2609282",
+      "authority": "Peer-reviewed methods",
+      "validated": true,
+      "topics": ["webcam_heart_rate"],
+      "text": "Remote photoplethysmography estimates the pulse from small colour changes of the facial skin recorded by a camera. HEXTA uses the POS algorithm on the mean colour of the face region and looks for the dominant frequency between 42 and 180 beats per minute. Accuracy drops with movement, talking, changing light, low frame rate and very short recordings. In HEXTA the value is kept as its own series (method webcam_rppg), flagged to verify, and never mixed with manual pulse or Bio-Monitor readings."
+    },
+    {
+      "id": "vision-resting-hr-context",
+      "title": "Context for a resting heart rate reading",
+      "source": "HL7 FHIR R4 Vital Signs profile; CSA Bio-Monitor documentation.",
+      "url": "https://www.hl7.org/fhir/R4/observation-vitalsigns.html",
+      "authority": "Standards and CSA documentation",
+      "validated": true,
+      "topics": ["webcam_heart_rate", "heart_rate"],
+      "text": "A heart rate value needs its time, method, device and context. A resting value is taken seated or lying, after a few minutes of calm, away from exercise, caffeine or stress. Without the rest context the reading stays out of the resting series. HEXTA applies no universal heart rate threshold; a surprising value is confirmed by a manual pulse count over 60 seconds before any review."
+    },
+    {
+      "id": "vision-photo-capture",
+      "title": "Taking a usable health photo onboard",
+      "source": "HEXTA prototype guidance.",
+      "url": null,
+      "authority": "HEXTA prototype - not validated",
+      "validated": false,
+      "topics": ["photo_capture", "urine_color", "skin_rash"],
+      "text": "Use the same white light source each time, avoid coloured cabin lighting and shadows, keep the camera parallel to the surface and fill the frame. For urine, use a clear container against a white background. For skin, include a size reference (ruler or known object) and take one close-up plus one wider photo showing the body site. Blurred, dark or colour-cast photos are rejected and must be retaken."
+    }
+  ]
+}

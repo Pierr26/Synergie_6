@@ -1,0 +1,780 @@
+{
+ "_meta": {
+  "description": "Corpus RAG + referentiel d'indicateurs pour Health Monitoring (NASA Space Apps 2026)",
+  "generated": "2026-11-13",
+  "api_key_required": false,
+  "license": "CC0-1.0 pour les donnees NASA OSDR ; documentation NASA sous droits NASA",
+  "collections": {
+   "health_indicators": 10,
+   "advice_cards": 8,
+   "hazards": 5,
+   "rag_documents": 17
+  },
+  "note": "Les seuils non issus de la NASA sont explicitement marques avec un champ 'disclaimer'."
+ },
+ "health_indicators": [
+  {
+   "_id": "glucose",
+   "label": "Glycémie",
+   "unit": "mg/dL",
+   "category": "metabolic",
+   "thresholds": {
+    "watch": 140,
+    "critical": 180
+   },
+   "refMin": 65,
+   "refMax": 99,
+   "refSource": "NASA OSDR OSD-575 (Comprehensive Metabolic Panel) — plages de référence terrestres Quest Diagnostics",
+   "hazards": [
+    "inadequate_nutrition",
+    "altered_metabolism"
+   ],
+   "howToMeasure": "Glycémie capillaire au réveil, avant le petit-déjeuner. Requiert un glucomètre (i-STAT ou lecteur numérique).",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "Lecteur de glycémie (point-of-care)",
+   "baseline": true
+  },
+  {
+   "_id": "bloodPressure",
+   "label": "Pression artérielle",
+   "unit": "mmHg",
+   "category": "cardiovascular",
+   "thresholds": {
+    "watch_low": 90,
+    "watch_high": 140,
+    "critical_low": 80,
+    "critical_high": 180
+   },
+   "refMin": 90,
+   "refMax": 140,
+   "refSource": "Plage de référence terrestre standard ; NASA HRP Risk of Cardiovascular Adaptations (hypotension, intolérance orthostatique)",
+   "hazards": [
+    "cardiovascular_adaptations",
+    "deconditioning"
+   ],
+   "howToMeasure": "Brassard à tension. Sur l'ISS, le SunTech Tango (déclenché par le pic R de l'ECG, analyse Dimensional K-Sound) distingue les bruits de Korotkoff du bruit et des impacts du tapis roulant — mesure fiable en microgravité.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "Tensiomètre (SunTech Tango) ou brassard + cuff auto-adaptatif",
+   "note": "Suivre NASA : vêtements de compression des membres inférieurs et hydratation avant atterrissage pour prévenir l'hypotension.",
+   "baseline": true
+  },
+  {
+   "_id": "heartRate",
+   "label": "Fréquence cardiaque",
+   "unit": "bpm",
+   "category": "cardiovascular",
+   "thresholds": {
+    "watch_high": 100,
+    "critical_high": 130
+   },
+   "refMin": 60,
+   "refMax": 100,
+   "refSource": "Plage de référence terrestre ; NASA HRP — déconditionnement cardiovasculaire",
+   "hazards": [
+    "cardiovascular_adaptations",
+    "reduced_cardiorespiratory_fitness",
+    "hypoxia"
+   ],
+   "howToMeasure": "ECG continu (CSA Bio-Monitor, Philips EASI 12 dérivations) ou capteur thoracique. La Bio-Monitor se porte pendant le sommeil et l'exercice.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "CSA Bio-Monitor (chemise intelligente) / ECG 12 dérivations",
+   "baseline": true
+  },
+  {
+   "_id": "bodyTemperature",
+   "label": "Température corporelle",
+   "unit": "°C",
+   "category": "general",
+   "thresholds": {
+    "watch_low": 36.0,
+    "watch_high": 37.8,
+    "critical_high": 39.0
+   },
+   "refMin": 36.0,
+   "refMax": 37.8,
+   "refSource": "Plage de référence terrestre ; NASA HRP — risque de réactivation virale (fièvre)",
+   "hazards": [
+    "altered_immune_system",
+    "host_microorganism_interactions"
+   ],
+   "howToMeasure": "Température cutanée (CSA Bio-Monitor) ou thermomètre oral. Attention : en microgravité le transfert thermique cutané est modifié.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "Bio-Monitor (capteur cutané) / thermomètre",
+   "baseline": true
+  },
+  {
+   "_id": "sleepHours",
+   "label": "Heures de sommeil",
+   "unit": "h/24h",
+   "category": "behavioral",
+   "thresholds": {
+    "watch": 6.0,
+    "critical": 5.0
+   },
+   "refMin": 7.0,
+   "refMax": 9.0,
+   "refSource": "Heuristic d'outil — NASA HRP ne publie pas de seuil de sommeil spatial. À assumer explicitement comme paramètre de notre outil.",
+   "hazards": [
+    "inadequate_sleep",
+    "circadian_desynchronization",
+    "behavioral_changes"
+   ],
+   "howToMeasure": "Actigraphie (Actiwatch) ou auto-déclaration via l'application. À bord de l'ISS : 16 cycles jour/nuit par jour, ce qui perturbe le cycle veille-sommeil.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "Actiwatch / questionnaire d'auto-évaluation",
+   "baseline": true,
+   "disclaimer": "Seuil heuristique de l'outil, non une norme NASA."
+  },
+  {
+   "_id": "mood",
+   "label": "Humeur",
+   "unit": "échelle 1-5",
+   "category": "behavioral",
+   "thresholds": {
+    "watch": 2,
+    "critical": 1
+   },
+   "refMin": 3,
+   "refMax": 5,
+   "refSource": "Échelle construite par notre outil — NASA HRP documente la santé comportementale comme 'red risk' mais ne fixe pas d'échelle numérique.",
+   "hazards": [
+    "behavioral_changes",
+    "psychiatric_disorders",
+    "inadequate_teamwork",
+    "isolation_confinement"
+   ],
+   "howToMeasure": "Auto-évaluation en un clic, 1 (très mal) à 5 (très bien). Peut être combinée à la CO₂ cabine (les variations d'humeur sont signalées dès 5 000 ppm).",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "instrument": "Questionnaire d'auto-évaluation dans l'application",
+   "baseline": true,
+   "disclaimer": "Échelle de notre outil, pas une échelle clinique validée."
+  },
+  {
+   "_id": "co2Cabin",
+   "label": "CO₂ cabine",
+   "unit": "mmHg",
+   "category": "environment",
+   "thresholds": {
+    "watch": 3.0,
+    "critical": 5.0
+   },
+   "refMin": 0.3,
+   "refMax": 3.0,
+   "refSource": "NASA-STD-3001 V2 6004 : ≤ 3 mmHg en moyenne 1 h. Objectif de conception ECLSS-26 : 2 mmHg (2 600 ppm). Limite ISS historique : 5 300 ppm.",
+   "hazards": [
+    "hostile_closed_environments",
+    "hypoxia",
+    "isolation_confinement"
+   ],
+   "howToMeasure": "Major Constituent Analyzer (MCA) de l'ISS — spectromètre de masse multi-points. En cabine : capteur CDMK.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "doseResponse": "Pour chaque +1 mmHg de CO2, les chances qu'un équipier déclare une céphalée doublent (Law et al., ISS exp. 2-31). Symptômes : dès 3 000 ppm fatigue et tête lourde ; 3 500-4 000 ppm étapes de procédure manquées ; 4 000-4 500 ppm céphalées.",
+   "isEnvironment": true
+  },
+  {
+   "_id": "o2Partial",
+   "label": "Pression partielle O₂",
+   "unit": "mmHg",
+   "category": "environment",
+   "thresholds": {
+    "watch": 137,
+    "critical": 114
+   },
+   "refMin": 137,
+   "refMax": 151.3,
+   "refSource": "NASA-STD-3000 §5.1.2.2.1 : 151,3 mmHg = niveau mer ; 137 mmHg = limite d'alerte (perte de vision nocturne) ; 114 mmHg = performance altérée, acidose respiratoire. ISS maintenu entre 146 et 178 mmHg.",
+   "hazards": [
+    "hypoxia",
+    "decompression_sickness",
+    "eva_injury"
+   ],
+   "howToMeasure": "Capteur de pression partielle dans le module. En EVA : suit la purge de la combinaison.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "isEnvironment": true
+  },
+  {
+   "_id": "cabinTemperature",
+   "label": "Température cabine",
+   "unit": "°C",
+   "category": "environment",
+   "thresholds": {
+    "watch_low": 18,
+    "watch_high": 27
+   },
+   "refMin": 18,
+   "refMax": 27,
+   "refSource": "NASA-STD-3000 : 65-80 °F opérationnel ; 60-85 °F en situation d'urgence 28 jours.",
+   "hazards": [
+    "hostile_closed_environments"
+   ],
+   "howToMeasure": "Sonde de température du module (ECLSS).",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "isEnvironment": true
+  },
+  {
+   "_id": "radiationDose",
+   "label": "Dose de radiation",
+   "unit": "mSv/jour",
+   "category": "environment",
+   "thresholds": {
+    "watch": 0.3,
+    "critical": 1.0
+   },
+   "refMin": 0.0,
+   "refMax": 0.3,
+   "refSource": "À calibrer selon l'environnement — seuils dépendants de la protection. CANS (CSA) : les neutrons représentent ~30 % de la dose totale sur l'ISS.",
+   "hazards": [
+    "radiation_induced_cancers",
+    "space_radiation"
+   ],
+   "howToMeasure": "CANS (Canadian Active Neutron Spectrometer) — instrument compact et autonome, fonctionnement en continu. MOSFET, EVARM, Radi-N/Radi-N2 sont lesurileurs ISS précédents.",
+   "feasibleIn": [
+    "spacecraft",
+    "station",
+    "rover",
+    "base_luna"
+   ],
+   "isEnvironment": true,
+   "disclaimer": "Seuils indicatifs — à valider selon le blindage de la mission."
+  }
+ ],
+ "advice_cards": [
+  {
+   "_id": "advice-glucose-low",
+   "indicator": "glucose",
+   "condition": "value < 70 mg/dL",
+   "severity": "critical",
+   "title": "Glycémie sous le seuil de référence",
+   "body": "NASA OSDR (OSD-575) documente des valeurs basses après le vol : C003 à R+45 mesurait 36 mg/dL pour une référence terrestre de 65-99 mg/dL. Le HRP NASA liste 'inadequate nutrition' parmi les risques de mission longue. Action 1 : recontrôler après une prise de glucides et enregistrer la valeur. Action 2 : signaler au chirurgien de vol. Action 3 : adapter la ration du repas suivant. NASA ne formule aucune recommandation médicamenteuse destinée à l'astronaute autonome.",
+   "sources": [
+    "NASA OSDR OSD-575 (CC0-1.0)",
+    "NASA HRP — Risk of Inadequate Food and Nutrition"
+   ],
+   "do_not": "Ne pas prescrire de traitement. Le rôle de l'outil est de signaler et d'escalader."
+  },
+  {
+   "_id": "advice-glucose-high",
+   "indicator": "glucose",
+   "condition": "value > 140 mg/dL",
+   "severity": "watch",
+   "title": "Glycémie au-dessus du seuil de surveillance",
+   "body": "Sur l'ISS, la glycémie peut se déstabiliser en microgravité et le risque 'inadequate nutrition' est documenté par le HRP. Données de référence : NASA OSDR OSD-575 fournit 28 mesures de glycémie sur 4 astronautes (7 points de vol), plage de référence 65-99 mg/dL. Action : contrôler la ration glucidique, recontrôler avant l'effort, et consigner la tendance sur 7 jours.",
+   "sources": [
+    "NASA OSDR OSD-575 (CC0-1.0)",
+    "NASA HRP — Risk of Inadequate Food and Nutrition"
+   ],
+   "do_not": "Pas de interprétation clinique ni de modification de traitement."
+  },
+  {
+   "_id": "advice-sleep-deficit",
+   "indicator": "sleepHours",
+   "condition": "sommeil < 6 h sur 24 h, ou variation > 20 % vs baseline 7 jours",
+   "severity": "watch",
+   "title": "Déficit de sommeil et désynchronisation circadienne",
+   "body": "La NASA HRP identifie 'inadequate sleep and irregular schedules' comme un risque : 'work overload, irregular light-dark cycles, and sleep-pattern disruptions'. Contre-mesures NASA : éclairage LED pour simuler le cycle jour/nuit terrestre ; étude de l'effet de la lumière et de la caféine sur l'horloge biologique ; temps dédié à la relaxation et aux soins personnels dans la routine. À bord de l'ISS, les astronautes connaissent 16 levers et couchers de soleil par jour. Risque associé : baisse de performance, erreurs d'exécution.",
+   "sources": [
+    "NASA HRP — Risk from Inadequate Sleep and Irregular Schedules"
+   ],
+   "do_not": "Ne pas recommander de médicaments. Orienter vers l'adaptation de l'éclairement et du planning."
+  },
+  {
+   "_id": "advice-co2-headache",
+   "indicator": "mood",
+   "linkedIndicator": "co2Cabin",
+   "condition": "CO2 cabine (moyenne 1 h) > 3 mmHg, ou fatigue / tête lourde déclarée",
+   "severity": "critical",
+   "title": "Hypercapnie possible : céphalée et baisse de performance",
+   "body": "Sur l'ISS, 'pour chaque augmentation de 1 mmHg de CO2, les chances qu'un équipier déclare une céphalée doublent' (Law et al., expéditions ISS 2 à 31). Symptômes rapportés par les équipages : dès 3 000 ppm fatigue et tête lourde ; 3 500-4 000 ppm étapes de procédure manquées ou procédures allongées ; 4 000-4 500 ppm céphalées ; changements d'humeur signalés dès 5 000 ppm. Objectif NASA-STD-3001 : moyenne 1 h ≤ 3 mmHg ; objectif de conception ECLSS : 2 mmHg (2 600 ppm). Action : vérifier la ventilation, signaler au sol, et consigner l'association avec l'humeur et la fatigue.",
+   "sources": [
+    "NASA-STD-3001 V2 6004",
+    "Law et al. 2014 — CO2 and headaches on the ISS",
+    "NASA ECLSS Baseline ECLSS-26"
+   ],
+   "do_not": "Le CO2 est un indicateur d'ENVIRONNEMENT, pas un indicateur corporel. Ne pas attribuer la cause à l'astronaute."
+  },
+  {
+   "_id": "advice-orthostatic",
+   "indicator": "bloodPressure",
+   "condition": "TA systolique < 90 mmHg au repos, ou FC repos > baseline + 15 %",
+   "severity": "watch",
+   "title": "Déconditionnement cardiovasculaire : vigilance hypotension",
+   "body": "En microgravité, le sang et les fluides sont déplacés des jambes et de l'abdomen vers le cœur et la tête : le volume de sang dans le cœur et les vaisseaux diminue de 10 à 15 %. Le cœur passe d'une forme ovale à une forme sphérique, et les muscles qui contractent les vaisseaux s'atrophient, ce qui réduit le contrôle du débit sanguin. NASA : 'les vêtements de compression des membres inférieurs et boire beaucoup de liquides avant l'atterrissage aident à prévenir l'hypotension'. Risque d'intolérance orthostatique au retour : vertige, évanouissement. Action : contrôler la tension au repos puis en position debout, signaler tout épisode, et vérifier le port des vêtements de compression.",
+   "sources": [
+    "NASA — Cardiovascular Health in Microgravity",
+    "NASA HRP — Risk of Cardiovascular Adaptations"
+   ],
+   "do_not": "Aucun avis sur la posologie ou l'hydratation sans avis médical."
+  },
+  {
+   "_id": "advice-immune-viral",
+   "indicator": "whiteBloodCellCount",
+   "condition": "lymphocytes hors plage sur 2 points de vol consécutifs, ou symptômes (éruption, fièvre)",
+   "severity": "watch",
+   "title": "Réactivation virale possible",
+   "body": "Le HRP NASA écrit : 'les stresseurs du vol spatial peuvent réveiller des virus dormants dans le corps des astronautes, menant à des éruptions et d'autres symptômes'. Le jeu NASA OSDR OSD-569 fournit la numération formule sanguine complète de 4 astronautes sur 7 points de vol (553 mesures) — c'est la référence pour situer une dérive. Action : mesurer et tracer, vérifier l'hygiène de l'habitat (microbiote cutané et intestinal), signaler éruption ou fièvre au chirurgien de vol.",
+   "sources": [
+    "NASA HRP — Risk of Altered Immune System Responses",
+    "NASA OSDR OSD-569 (CC0-1.0)"
+   ],
+   "do_not": "Ne pas interpréter une numération sanguine. Signaler et tracer."
+  },
+  {
+   "_id": "advice-bone-loss",
+   "indicator": "boneDensity",
+   "condition": "densité osseuse (colonne / hanches) en baisse > 1 %/mois, ou calcium sérique bas",
+   "severity": "watch",
+   "title": "Perte osseuse spaceflight",
+   "body": "Le HRP NASA documente une perte de densité minérale osseuse de 1 à 2 % par mois en microgravité (hanches et colonne), avec atérophie musculaire de 15 à 20 % sur 6 mois et jusqu'à 1,5 % de masse musculaire skelettique perdue par mois. Contre-mesures : exercice Daily (2,5 h/jour sur l'ISS), specifically ARED (résistance) et cardio, alimentation adaptée, et bisphosphonates (alendronate) associés à l'ARED. La perte osseuse n'est pas réversible par la seule réadaptation au retour.",
+   "sources": [
+    "NASA HRP — Risk of Spaceflight-Induced Bone Changes (Evidence Report 2024)",
+    "NASA HRP — Risk of Reduced Cardiorespiratory and Musculoskeletal Fitness"
+   ],
+   "do_not": "Aucune décision thérapeutique. Signaler et documenter la tendance."
+  },
+  {
+   "_id": "advice-hypoxia",
+   "indicator": "o2Partial",
+   "condition": "pO2 < 137 mmHg (limite d'alerte) ou symptoms: vision nocturne en perte, somnolence",
+   "severity": "critical",
+   "title": "Hypoxie : vigilance perte de vision nocturne et performance altérée",
+   "body": "NASA-STD-3000 : la pression partielle normale d'O2 est de 151,3 mmHg (niveau mer). À 137 mmHg, limite d'alerte : perte de vision nocturne, début de dilatation pupillaire. À 114 mmHg, performance sérieusement altérée, avec acidose respiratoire, rétention de carbonate osseux, activité surrénalienne augmentée et fonction cardiovasculaire diminuée — et aucun symptôme extérieur apparent. Sur l'ISS, la pO2 est maintenue entre 146 et 178 mmHg. Action : signaler immédiatement, vérifier la réserve d'O2 et la ventilation, et noter l associatesaturation SpO2.",
+   "sources": [
+    "NASA-STD-3000 §5.1.2.2.1",
+    "NASA HRP — Risk of Hypoxia"
+   ],
+   "do_not": "Ne pas prescrire d'oxygène. Escalade immédiate."
+  }
+ ],
+ "hazards": [
+  {
+   "_id": "space_radiation",
+   "label": "Radiations spatiales",
+   "nasaUrl": "https://www.nasa.gov/hrp/hazard-space-radiation/",
+   "video": "https://www.youtube.com/watch?v=3jRxgvwhGC0",
+   "summary": "Invisible à l'œil, furtive, et considérée comme l'un des aspects les plus dangereux du vol spatial.",
+   "risks": [
+    {
+     "label": "Radiation-Induced Cancers",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-radiation-induced-cancers/",
+     "indicators": [
+      "radiationDose",
+      "whiteBloodCellCount",
+      "hemoglobin"
+     ]
+    },
+    {
+     "label": "Cardiovascular effects of radiation",
+     "indicators": [
+      "heartRate",
+      "bloodPressure",
+      "crp"
+     ]
+    }
+   ]
+  },
+  {
+   "_id": "isolation_confinement",
+   "label": "Isolement et confinement",
+   "nasaUrl": "https://www.nasa.gov/hrp/hazard-isolation-and-confinement/",
+   "video": "https://www.youtube.com/watch?v=FPinASEKA_I",
+   "summary": "Réponses comportementales chez des groupes de personnes isolés et confinés dans un petit espace sur de longues périodes.",
+   "risks": [
+    {
+     "label": "Behavioral Changes & Psychiatric Disorders",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-behavioral-conditions-and-psychiatric-disorders/",
+     "indicators": [
+      "mood",
+      "sleepHours"
+     ]
+    },
+    {
+     "label": "Inadequate Teamwork",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-inadequate-teamwork/",
+     "indicators": [
+      "mood"
+     ]
+    },
+    {
+     "label": "Inadequate Sleep & Irregular Schedules",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-from-inadequate-sleep-and-irregular-schedules/",
+     "indicators": [
+      "sleepHours",
+      "mood",
+      "heartRate"
+     ]
+    }
+   ]
+  },
+  {
+   "_id": "distance_from_earth",
+   "label": "Distance de la Terre",
+   "nasaUrl": "https://www.nasa.gov/hrp/hazard-distance-from-earth/",
+   "video": "https://www.youtube.com/watch?v=0_pbs8dG1oM",
+   "summary": "Mars est à ~140 millions de miles. ~3 ans d voyage au lieu de 3 jours. Planification et autonomie seront clés. Retard de communication jusqu'à 20-45 min par sens ; blackouts de 2 semaines (conjonction solaire, CHAPEA).",
+   "risks": [
+    {
+     "label": "Inadequate Systems Operations Support",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-inadequate-systems-operations-support/",
+     "indicators": [
+      "mood",
+      "sleepHours"
+     ]
+    },
+    {
+     "label": "Delayed/Blackout medical communication",
+     "indicators": [
+      "mood",
+      "sleepHours",
+      "heartRate"
+     ]
+    }
+   ]
+  },
+  {
+   "_id": "gravity_fields",
+   "label": "Champs de gravité",
+   "nasaUrl": "https://www.nasa.gov/hrp/hazard-gravity-fields/",
+   "video": "https://www.youtube.com/watch?v=f3-96ZbY5NA",
+   "summary": "Sur Mars : 3/8e de la gravité terrestre pendant 2 ans. Sur la Lune : 1/6e. Muscles, os, oreille interne et organes doivent s'adapter.",
+   "risks": [
+    {
+     "label": "Spaceflight-Induced Bone Changes",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/",
+     "indicators": [
+      "boneDensity",
+      "calcium",
+      "plateletCount"
+     ]
+    },
+    {
+     "label": "Reduced Cardiorespiratory & Musculoskeletal Fitness",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-reduced-cardiorespiratory-and-musculoskeletal-fitness/",
+     "indicators": [
+      "heartRate",
+      "bloodPressure"
+     ]
+    },
+    {
+     "label": "Cardiovascular Adaptations",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-cardiovascular-adaptations/",
+     "indicators": [
+      "bloodPressure",
+      "heartRate"
+     ]
+    },
+    {
+     "label": "Altered Sensorimotor & Vestibular Function",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-altered-sensorimotor-and-vestibular-function/",
+     "indicators": [
+      "balance",
+      "reactionTime"
+     ]
+    }
+   ]
+  },
+  {
+   "_id": "hostile_closed_environments",
+   "label": "Environnements hostiles/clos",
+   "nasaUrl": "https://www.nasa.gov/hrp/hazard-hostile-closed-environments/",
+   "video": "https://www.youtube.com/watch?v=LgGt03MjHfA",
+   "summary": "Un vaisseau est à la fois une maison et une machine. Facteurs d'habitabilité : température, pression, éclairage, bruit, présence de microbes, et plus encore.",
+   "risks": [
+    {
+     "label": "Host-Microorganism Interactions",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-host-microorganism-interactions/",
+     "indicators": [
+      "whiteBloodCellCount",
+      "bodyTemperature"
+     ]
+    },
+    {
+     "label": "Hypoxia",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-hypoxia/",
+     "indicators": [
+      "o2Partial",
+      "co2Cabin"
+     ]
+    },
+    {
+     "label": "Injury & Compromised Performance from EVA",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-injury-and-compromised-performance-from-extravehicular-activity-eva/",
+     "indicators": [
+      "o2Partial",
+      "co2Cabin",
+      "heartRate",
+      "bodyTemperature"
+     ]
+    },
+    {
+     "label": "Decompression Sickness",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-decompression-sickness/",
+     "indicators": [
+      "o2Partial",
+      "bodyTemperature"
+     ]
+    },
+    {
+     "label": "Inadequate Food and Nutrition",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-inadequate-food-and-nutrition/",
+     "indicators": [
+      "glucose",
+      "albumin",
+      "bun",
+      "calcium",
+      "weight"
+     ]
+    },
+    {
+     "label": "Spaceflight Associated Neuro-ocular Syndrome (SANS)",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-spaceflight-associated-neuro-ocular-syndrome-sans/",
+     "indicators": [
+      "intraocularPressure",
+      "visualAcuity",
+      "balance"
+     ]
+    },
+    {
+     "label": "Altered Immune System Responses",
+     "nasaUrl": "https://www.nasa.gov/reference/risk-of-altered-immune-system-responses/",
+     "indicators": [
+      "whiteBloodCellCount",
+      "lymphocytes",
+      "crp",
+      "il6"
+     ]
+    }
+   ]
+  }
+ ],
+ "rag_documents": [
+  {
+   "id": "doc-hazards",
+   "title": "NASA — 5 Hazards of Human Spaceflight",
+   "url": "https://www.nasa.gov/hrp/hazards/",
+   "source": "NASA Human Research Program",
+   "text": "Un voyage vers Mars offre des complexities inexhaustibles. Le Human Research Program de la NASA a identifié cinq dangers : les radiations spatiales, l'isolement et le confinement, la distance de la Terre, la gravité (et son absence), et les environnements clos ou hostiles. Ces dangers ne sont pas isolés : ils peuvent s'alimenter l'un l'autre et exacerber leurs effets sur le corps humain. Ils sont étudiés sur trois plateformes : les analogs au sol, les laboratoires et l'ISS. La recherche produit une base de connaissances pour extrapoler aux missions interplanétaires pluriannuelles. Le cœur et le cerveau : en microgravité, le cœur change de forme (ovale vers sphérique), les muscles qui contractent les vaisseaux s'atrophient, le volume sanguin diminue de 10-15 %, une intolérance orthostatique apparaît au retour. SANS : l'augmentation de la pression intracrânienne cause perte auditive, œdème cérébral et déformation de l'œil, touchant environ 70 % des astronautes en mission longue. Isolement : la santé comportementale est un « red risk » de priorité maximale."
+  },
+  {
+   "id": "doc-risks",
+   "title": "NASA — Risks of Human Spaceflight (33 risques)",
+   "url": "https://www.nasa.gov/hrp/risks/",
+   "source": "NASA Human Research Program",
+   "text": "Le HRP a identifié 33 risques liés aux 5 dangers, en 3 familles. Physiologie : système immunitaire altéré (réactivation virale), fonction sensorimotrice et vestibulaire altérée (mal des transports, vertiges), adaptations cardiovasculaires (caillots, arythmies, hypotension), maladie de décompression, interactions hôte-micro-organismes, hypoxie, alimentation et nutrition inadéquates, blessures et performance compromise en EVA, fitness cardio-respiratoire et musculo-squelettique réduit, syndrome neuro-oculaire spaceflight (SANS), changements osseux induits par le vol spatial, blessures lors des charges dynamiques. Comportement : troubles du comportement et psychiatriques, travail d'équipe insuffisant, sommeil insuffisant et horaires irréguliers, soutien des systèmes opérationnels insuffisant, blessures par charges dynamiques. Radiation : cancers induits par les radiations."
+  },
+  {
+   "id": "doc-cardiovascular",
+   "title": "NASA — Risk of Cardiovascular Adaptations",
+   "url": "https://www.nasa.gov/reference/risk-of-cardiovascular-adaptations/",
+   "source": "NASA HRP",
+   "text": "Les conditions de faible gravité et les autres stresseurs spatiaux peuvent altérer le cœur et les vaisseaux sanguins, menant potentiellement à des caillots sanguins, des arythmies cardiaques, des maladies cardiovasculaires et de l'hypotension, ce qui augmente les chances de s'évanouir à l'atterrissage. Le risque augmente avec les missions de longue durée comme un voyage sur Mars. Ce qu'on peut faire : l'exercice régulier et une alimentation saine maintiennent la condition cardiovasculaire ; les vêtements de compression des membres inférieurs et boire beaucoup de liquides avant l'atterrissage aident à prévenir l'hypotension ; pour les futures missions vers Mars, les astronautes recevront un entraînement renforcé pour répondre aux urgences cardiovasculaires. Le saviez-vous : la faible gravité peut changer physiquement la forme du cœur humain, le rendant plus sphérique."
+  },
+  {
+   "id": "doc-microgravity-cardio",
+   "title": "NASA — Cardiovascular Health in Microgravity",
+   "url": "https://www.nasa.gov/missions/station/cardiovascular-health-in-microgravity/",
+   "source": "NASA",
+   "text": "Dès l'arrivée en microgravité, le sang et les autres fluides corporels sont poussés vers le haut, des jambes et de l'abdomen vers le cœur et la tête. Ce déplacement des fluides provoque une diminution de la quantité de sang et de fluide dans le cœur et les vaisseaux, même si les astronautes présentent un gonflement du visage et de la tête. Le cœur change de forme : d'un ovale comme un ballon rempli d'eau à une boule ronde comme un ballon gonflé d'air. L'atrophie des muscles qui, sur Terre, contractent les vaisseaux sanguins signifie qu'ils ne peuvent pas contrôler le débit sanguin aussi bien. Au retour sur Terre, la perte de volume sanguin combinée à l'atrophie du cœur et des vaisseaux réduit la capacité à réguler la chute de tension au lever : certains astronautes souffrent d'intolérance orthostatique, difficulté ou incapacité à se lever à la suite de vertiges et/ou d'évanouissement. L'augmentation apparente du fluide dans le crâne est thought augmenter la pression cérébrale, ce qui peut causer une perte de hearing, un œdème cérébral et une déformation de l'œil connue comme le syndrome neuro-oculaire associé au vol spatial (SANS). L'exercice dans l'espace est un moyen efficace de maintenir la plupart des types de condition cardiovasculaire : ARED, treadmill, vélo, et pantalons à pression différentielle."
+  },
+  {
+   "id": "doc-sleep",
+   "title": "NASA — Risk from Inadequate Sleep and Irregular Schedules",
+   "url": "https://www.nasa.gov/reference/risk-from-inadequate-sleep-and-irregular-schedules/",
+   "source": "NASA HRP",
+   "text": "Les astronautes sont exposés à de nombreux stresseurs pendant le vol spatial, tels que la surcharge de travail, les cycles lumière-obscurité irréguliers et les perturbations du sommeil. Ces stresseurs pèsent sur le corps humain et peuvent entraîner des conséquences à court et long terme qui affectent le succès de la mission. Pour minimiser les effets : des diodes électroluminescentes (LED) simulent le cycle jour-nuit de la Terre pour aider les astronautes à mieux dormir ; les chercheurs étudient comment des facteurs comme la lumière et la consommation de caféine affectent les horloges biologiques des équipages et influencent la qualité du sommeil ; des temps désignés pour la relaxation et les soins personnels sont donnés aux astronautes dans leur routine afin d'éviter l'épuisement professionnel. Le saviez-vous : les astronautes witnessing 16 levers et couchers de soleil par jour à bord de la station, ce qui peut perturber leur cycle veille-sommeil."
+  },
+  {
+   "id": "doc-nutrition",
+   "title": "NASA — Risk of Inadequate Food and Nutrition",
+   "url": "https://www.nasa.gov/reference/risk-of-inadequate-food-and-nutrition/",
+   "source": "NASA HRP",
+   "text": "Une alimentation saine, équilibrée etárate est un élément essentiel de la santé et de la performance de l'équipage. La recherche continue se concentre sur la conception de repas agréables, durables et nutritifs pour les missions spatiales de longue durée, et sur la compréhension des conséquences d'une nutrition inadéquate. La nutrition affecte la réponse immunitaire, la masse osseuse, le métabolisme des glucides et la performance cardiovasculaire. L'exercice quotidien de 2,5 heures sur l'ISS est un contre-mesure majeure, associée à l'alimentation pour préserver la masse osseuse et musculaire. Les astronautes perdent 1-2 % de densité osseuse par mois sans countermeasures appropriées, et 15-20 % de masse musculaire sur 6 mois. Les objectifs nutritionnels doivent être adaptés à l'environnement de mission, y compris pour les bases planétaires où les aliments ne peuvent pas être réapprovisionnés."
+  },
+  {
+   "id": "doc-bone",
+   "title": "NASA — Risk of Spaceflight-Induced Bone Changes",
+   "url": "https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/",
+   "source": "NASA HRP — Evidence Report 07-18-2024",
+   "text": "Sans gravité, les os se décomposent et deviennent plus fragiles, augmentant les chances de fractures douloureuses. En microgravité, la densité minérale osseuse surfacique (aBMD) des astronautes diminue en moyenne de 1 à 1,5 % par mois pour la hanche et la colonne, soit plus rapide que la perte osseuse annuelle d'une personne de 30 ans en bonne santé. Un modèle de perte osseuse montre que 62 % des astronautes reviendraient d'une mission Mars avec un score T de diagnostic d'ostéoporose au col du fémur, avec une adaptation de 29 % de DMO. L'ARED a réduit la perte : les valeurs pré-ARED (sans dispositif) étaient de 0,994 %/mois pour la hanche totale, contre 1,047 %/mois après ARED. Les contre-mesures : exercice Daily avec ARED, alimentation, et bisphosphonates (alendronate) en association avec l'ARED. La perte osseuse n'est pas entièrement réversible."
+  },
+  {
+   "id": "doc-immune",
+   "title": "NASA — Risk of Altered Immune System Responses",
+   "url": "https://www.nasa.gov/reference/risk-of-altered-immune-system-responses/",
+   "source": "NASA HRP",
+   "text": "Les stresseurs du vol spatial peuvent réveiller des virus inactifs dans le corps des astronautes, entraînant des éruptions cutanées et d'autres symptômes. La dysrégulation immunitaire peut aussi réduire la réponse des astronautes aux vaccins et altérer la capacité du système immunitaire à répondre à une infection. Les travaux en cours cherchent à mieux comprendre les changements du système immunitaire afin de protéger la santé des astronautes. Les facteurs en jeu incluent la microgravité, les radiations spatiales, le stress psychologique, les troubles du sommeil, la nutrition, et l'environnement fermé de l'habitat. Les microbiomes cutané et intestinal évoluent dans l'espace, ce qui augmente le risque de maladie pour les membres d'équipage. L'activation de virus dormants comme le virus herpes simplex a été documentée chez les astronautes et peut persister des années après le vol."
+  },
+  {
+   "id": "doc-sans",
+   "title": "NASA — Risk of Spaceflight Associated Neuro-ocular Syndrome (SANS)",
+   "url": "https://www.nasa.gov/reference/risk-of-spaceflight-associated-neuro-ocular-syndrome-sans/",
+   "source": "NASA HRP",
+   "text": "La structure des yeux et du cerveau peut changer avec le vol spatial. La recherche se concentre sur la compréhension des conséquences à long terme de ces changements et sur leur prévention. Le SANS a été identifié en 2005 et est actuellement le principal risque de santé lié au vol spatial de la NASA, plus prédominant chez les hommes que chez les femmes en vol. Le syndrome comprend un gonflement du disque optique, un aplatissement du globe oculaire, une myopie et une altération de la vision proche. Environ 70 % des astronautes en mission longue développeront un SANS. Il est associé à l'hypertension intracrânienne et au déplacement de fluides vers la tête. Le diagnostic et le suivi reposent sur l'échographie oculaire, la tonométrie et la vision de près — des examens réalisables par l'équipage avec une guidance à distance."
+  },
+  {
+   "id": "doc-std3000-atmosphere",
+   "title": "NASA-STD-3000 — Espace habitable et atmosphère",
+   "url": "https://msis.jsc.nasa.gov/sections/section05.htm",
+   "source": "NASA Spacecraft Systems Standards",
+   "text": "Atmosphère standard au niveau de la mer : pression totale 101,36 kPa (14,70 psia, 760,0 mmHg), pression partielle d'oxygène 21,37 kPa (3,04 psia, 151,3 mmHg), pression partielle d'azote 78,60 kPa (591,7 mmHg), pression partielle de vapeur d'eau 10,7 mmHg, pression partielle de CO2 0,3 mmHg. La pression partielle d'oxygène doit être maintenue au-dessus de 152 mmHg pour un fonctionnement normal. À 160 mmHg : niveau mer normal. À 137 mmHg : limite d'alerte acceptée, perte de vision nocturne, premier symptôme la dilatation pupillaire. À 114 mmHg : performance sérieusement altérée, acidose respiratoire, rétention de carbonate dans le tissu osseux, activité surrénalienne corticale diminuée, fonction cardiovasculaire diminuée, sans symptôme extérieur apparent. Exigences d'atmosphère respirable : pression partielle CO2 operational 3,0 mmHg max, 90 jours dégradé 7,6 mmHg max, 28 jours urgence 12 mmHg max ; température 65-80 °F (18-27 °C) ; point de rosée 40-60 °F ; ventilation 15-40 ft/min ; pression partielle O2 2,83-3,35 psia ; pression totale 14,5-14,9 psia ; micro-organismes 500 CFU/m3 (opérationnel), 750 (90 jours), 1000 (28 jours)."
+  },
+  {
+   "id": "doc-co2-eclss",
+   "title": "NASA ECLSS Baseline — Contrôle du CO2",
+   "url": "https://internationaldeepspacestandards.com/wp-content/uploads/2024/02/eclss_baseline_final_3-2019.pdf",
+   "source": "International ECLSS Interoperability Baseline",
+   "text": "ECLSS-26 : le système doit contrôler la pression partielle de CO2 moyenne sur 24 h à un objectif de 267 Pa (2 mmHg, 2 600 ppm). Justification : certaines preuves de missions ISS de longue durée suggèrent que la microgravité augmente la sensibilité des équipiers aux symptômes liés au CO2, tels que céphalées, léthargie, malaise, apathie et fatigue. Objectif de conception NASA medical : 2 mmHg (2 600 ppm). Atmosphère d'exploration recommandée : 57 kPa (8,2 psia) avec 34 % d'oxygène, bande de contrôle 33-35 %. ECLSS-19 : pression partielle d'oxygène contrôlable entre 18,7 kPa (2,7 psia) et 23,4 kPa (3,4 psia) pour éviter l'hypoxie ou l'hyperoxie. ECLSS-20 : concentration d'O2 maintenue sous 25,9 % au-dessus de 80 kPa."
+  },
+  {
+   "id": "doc-co2-headaches",
+   "title": "Étude ISS — Relation CO2 et céphalées d'équipage",
+   "url": "https://www.researchgate.net/publication/262148293_Relationship_Between_Carbon_Dioxide_Levels_and_Reported_Headaches_on_the_International_Space_Station",
+   "source": "Law et al. — Aviation, Space & Environmental Medicine",
+   "text": "Pour chaque augmentation de 1 mmHg de CO2, les chances qu'un équipier déclare une céphalée doublent. Pour maintenir le risque de céphalée sous 1 %, le CO2 moyen sur 7 jours devrait être maintenu sous 2,5 mmHg (gamme ISS actuelle : 1 à 9 mmHg). Les pressions partielles hebdomadaires de CO2 observées étaient dans la gamme 1,17-5,56 mmHg pour les expéditions ISS 2 à 31, alors que les niveaux terrestres sont sous 0,5 mmHg. L'hypercapnie est connue pour provoquer une vasodilatation cérébrale, augmentant le débit sanguin cérébral et potentiellement la pression intracrânienne. En raison des contraintes logistiques liées au réapprovisionnement des absorbeurs de CO2 en orbite, l'atmosphère de l'ISS a été maintenue légèrement hypercapnique (1 à 9 mmHg). Les céphalées constituent le symptôme principal récurrent. Traitements : antalgique aigu 55,6 % ; autres médicaments 22,4 %."
+  },
+  {
+   "id": "doc-biomonitor",
+   "title": "CSA — Bio-Monitor : mesurer les signes vitaux en orbite",
+   "url": "https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp",
+   "source": "Canadian Space Agency",
+   "text": "Le Bio-Monitor est une technologie portable intégrée à la routine quotidienne d'un astronaute à bord de l'ISS, tout en surveillant et enregistrant ses signes vitaux. Le système, qui comprend une chemise intelligente, un bandeau et une application dédiée pour tablette, aide à surveiller la santé des astronautes et permet de nouvelles sciences en mesurant continuellement les données physiologiques. Le système mesure : le pouls et l'activité électrique du cœur ; la pression artérielle ; la fréquence et le volume respiratoires ; la température cutanée ; la saturation en oxygène du sang ; les niveaux d'activité physique. Les vêtements peuvent aussi être portés pendant le sommeil et l'exercice. Le système est conçu pour envoyer facilement l'information au sol, où les scientifiques peuvent surveiller la santé des astronautes autour de l'horloge pendant qu'ils orbitent. Développé par Carré Technologies (Montréal), lancé dans l'espace en décembre 2018. La version commerciale Hexoskin est utilisée par des centaines de partenaires institutionnels pour la recherche."
+  },
+  {
+   "id": "doc-cans-radiation",
+   "title": "CSA — Monitoring radiation for astronaut health (CANS)",
+   "url": "https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp",
+   "source": "Canadian Space Agency — 26 février 2026",
+   "text": "Les radiations sont l'un des défis clés faced par les astronautes qui vivent et travaillent au-delà du bouclier de l'atmosphère terrestre. La CSA a attribué un contrat de 5,5 millions de dollars à Bubble Technology Industries pour le développement du CANS, un instrument compact et autonome conçu pour mesurer l'exposition aux neutrons dans l'espace. Les neutrons, qui contribuent à environ 30 % de la radiation totale sur l'ISS, sont particulièrement nocifs car ils peuvent causer des dommages biologiques sérieux et nécessitent des mesures de protection spécialisées. Le CANS améliore les méthodes précédentes de détection des radiations par sa capacité unique à fonctionner en continu et de manière autonome. Le Canada possède une expertise significative en détection des radiations sur l'ISS, avec MOSFET, EVARM et Radi-N et Radi-N2."
+  },
+  {
+   "id": "doc-telemedicine",
+   "title": "NASA/TM-2015-218562 — Telemedicine en vol spatial",
+   "url": "https://ntrs.nasa.gov/api/citations/20170004604/downloads/20170004604.pdf",
+   "source": "NASA Technical Memorandum",
+   "text": "Un défi majeur des missions d'exploration : la bande passante pour les communications en espace profond sera probablement sévèrement limitée, restreignant le temps disponible pour la consultation équipage-sol à peut-être une heure par 24 heures. Au-delà de la transmission verbale, il y aura des contraintes significantes sur la télémétrie des données, limitant la capacité des équipes au sol à surveiller les paramètres de santé. Un changement de paradigme est nécessaire : des systèmes de données plus autonomes sont requis, robustes, permettant à l'équipage de diagnostiquer indépendamment et rapidement une maladie, d'évaluer les meilleurs traitements disponibles, d'évaluer la probabilité de succès du traitement et de déterminer les implications pour le reste de l'équipage et de la mission. Concernant le biomonitoring : le système de monitoring actuel est adéquat pour un suivi de base à la demande ; l'ECG nécessite un rasage pour l'application des électrodes collantes et une initialisation logicielle ; le tensiomètre est sensible à l'erreur de l'opérateur, au choix de la taille du brassard, au mouvement du patient et au bruit ; l'affichage de l'oxymètre n'est pas convivial même pour le personnel médical entraîné. Tous les appareils nécessitent une saisie manuelle des données et un transfert de fichiers vers les systèmes d'information, consommant ainsi du temps d'équipage. Les systèmes autonomes ont effectué des percées : le CPOD enregistre 9 heures de données (2 dérivations ECG, fréquence respiratoire, fréquence cardiaque, saturation Hgb-O2, température ambiante et corporelle, tension artérielle, accéléromètre 3 axes, horodatage, marqueurs d'événement) et se diffuse en continu via Bluetooth. L'ADUM a permis à un cosmonaute avec un entraînement minimal de réaliser un examen FAST abdominal guidé en temps réel par un expert au sol avec liaison descendante vidéo privée à 7,5 images/s et 2 secondes de délai audio-vidéo."
+  },
+  {
+   "id": "doc-c2m2",
+   "title": "CSA — C2M2 : autonome medical care pour missions de classe Mars",
+   "url": "https://publications.spaceops.org/2025/download_by_id.php?id=0092",
+   "source": "SpaceOps 2025 / CSA",
+   "text": "C2M2 est un moteur computationnel capable de fusionner des entrées multi-sources pour soutenir l'évaluation médicale en temps réel, le triage et la gestion. La boucle : les biocapteurs acquisitions en continu les constantes vitales (tension artérielle, fréquence cardiaque, fréquence respiratoire, SpO2, température corporelle) ; le système intègre les wearables (capteur ECG) et les données d'environnement (CO2, température) dans une analyse globale ; des algorithmes prédictifs analysent les tendances à long terme comme un déclin lent de la santé cardiovasculaire ou une déshydratation potentielle ; le CMO est alerté si des lectures anormales sont détectées ; si la tension artérielle montre une élévation soutenue, le système recommande des examens diagnostiques supplémentaires ; un résumé de santé complet est ensuite produit (statut actuel, anomalies détectées, actions recommandées) ; les données sont ensuite telecchargées de manière sécurisée. Si le lien de communication est indisponible, les données sont stockées dans l'archive médicale embarquée jusqu'à la prochaine fenêtre de contact planifiée. En période de blackout de communication, les soins sont entièrement pilotés par l'équipage ; pour compenser, le système fournit des ressources à la demande comme des algorithmes de diagnostic assistés par IA et des modules de formation juste-à-temps. La couche de communication gère la transmission asynchrone de télémétrie priorisée et chiffrée vers la Terre, assurant un échange de données sécurisé et efficace avec les chirurgiens de vol. Pour les missions de classe Mars, les(retards de communication atteignent 20 minutes par sens et l'évacuation est infaisable ; les systèmes sont conçus pour devenir progressivement autonomes."
+  },
+  {
+   "id": "doc-chapea",
+   "title": "NASA — CHAPEA Mission 2 : 378 jours d'isolement martien",
+   "url": "https://www.nasa.gov/missions/analog-field-testing/chapea/",
+   "source": "NASA",
+   "text": "CHAPEA (Crew Health and Performance Exploration Analog) est le programme de la NASA qui teste les exigences des missions d'un an. La mission 2 s'est déroulée du 19 octobre 2025 au 31 octobre 2026 : 378 jours dans un habitat martien imprimé en 3D de 1 700 pieds carrés au Johnson Space Center de Houston. Équipage de 4 : Ross Elder (commandant), Ellen Ellis (officier médical), Matthew Montgomery (officier scientifique), James Spicer (ingénieur de vol). Retard de communication jusqu'à 45 minutes par sens ; contact avec les familles par e-mail uniquement ; au 200e jour, deux semaines de silence radio complet pour simuler la conjonction solaire. L'équipage a cultivé des cultures, fait de l'exercice quotidien, exécuté des EVA simulées, entretenu l'habitat, et Assuré ses propres gestes médicaux : prises de sang autonomes et pratique de la sonde échographique. Les données de santé physique et comportementalecollected alimenteront les chirurgiens de vol, les psychologues et les ingénieurs pour perfectionner les soins médicaux et les designs d'habitat pour les missions Artemis. Michael Stenger, scientifique principal du HRP : cette mission enseigne les exigences des missions d'un an, y compris les soins médicaux et psychologiques via les retards de communication. Limite scientifique : 1 g, pas de microgravité, pas de rayonnement spatial profond, et un échantillon de 4 personnes."
+  }
+ ],
+ "baseline_C003": {
+  "subjectId": "C003",
+  "indicator": "glucose",
+  "unit": "mg/dL",
+  "refMin": 65.0,
+  "refMax": 99.0,
+  "series": [
+   {
+    "timepoint": "L-92",
+    "phase": "preflight",
+    "value": 77.0
+   },
+   {
+    "timepoint": "L-44",
+    "phase": "preflight",
+    "value": 62.0
+   },
+   {
+    "timepoint": "L-3",
+    "phase": "preflight",
+    "value": 75.0
+   },
+   {
+    "timepoint": "R+1",
+    "phase": "postflight",
+    "value": 103.0
+   },
+   {
+    "timepoint": "R+45",
+    "phase": "postflight",
+    "value": 36.0
+   },
+   {
+    "timepoint": "R+82",
+    "phase": "postflight",
+    "value": 80.0
+   },
+   {
+    "timepoint": "R+194",
+    "phase": "postflight",
+    "value": 73.0
+   }
+  ],
+  "stats": {
+   "n": 7,
+   "mean": 72.29,
+   "sd": 20.23,
+   "median": 75.0,
+   "min": 36.0,
+   "max": 103.0,
+   "preflight_mean": 71.33
+  },
+  "baseline_recommended": {
+   "window": "7 premiers points de vol (baseline pré-vol + adaptation)",
+   "method": "Z-score personnel : (valeur - moyenne) / écart-type",
+   "thresholds": {
+    "green": "|Z| < 1",
+    "orange": "1 <= |Z| < 2",
+    "red": "|Z| >= 2"
+   },
+   "trend_rule": "variation > 10 % sur 7 jours declenche orange, meme si |Z| < 1"
+  },
+  "source": "NASA OSDR OSD-575 (CC0-1.0) — donnees reelles, mission Inspiration4",
+  "caveat": "Mission de 3 jours en orbite basse : jeu de demonstration et de validation, PAS une reference clinique de mission longue."
+ }
+}

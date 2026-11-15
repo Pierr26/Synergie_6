@@ -1,0 +1,207 @@
+{
+  "_meta": {
+    "description": "English text for the reference data shown in the HEXTA interface (cahier des charges: public deliverables in English).",
+    "generated": "2026-11-14",
+    "editorialChanges": [
+      "advice-bone-loss: the mention of a medication (bisphosphonates/alendronate) was removed; HEXTA never suggests a medication.",
+      "sleepHours and advice-sleep-deficit: '16 day/night cycles per day' corrected to 'about 16 sunrises and sunsets per day'.",
+      "advice cards: the green/orange/red thresholds and z-score rules of the data bank are kept as text only; they never trigger an alert."
+    ]
+  },
+  "hazards": {
+    "space_radiation": {
+      "label": "Space radiation",
+      "summary": "Invisible and hard to detect, space radiation is considered one of the most hazardous aspects of spaceflight."
+    },
+    "isolation_confinement": {
+      "label": "Isolation and confinement",
+      "summary": "Behavioural responses of small groups living isolated and confined in a small space for long periods."
+    },
+    "distance_from_earth": {
+      "label": "Distance from Earth",
+      "summary": "Mars is about 140 million miles away: a round trip of about three years instead of three days to the Moon. Planning and autonomy are key. Communication delays reach 20 to 45 minutes each way, with blackouts of about two weeks during solar conjunction."
+    },
+    "gravity_fields": {
+      "label": "Gravity fields",
+      "summary": "Mars has 3/8 of Earth's gravity and the Moon 1/6. Muscles, bones, the inner ear and other organs must adapt to each change of gravity."
+    },
+    "hostile_closed_environments": {
+      "label": "Hostile and closed environments",
+      "summary": "A spacecraft is both a home and a machine. Habitability factors include temperature, pressure, lighting, noise, microbes and more."
+    }
+  },
+  "indicators": {
+    "glucose": {
+      "label": "Blood glucose",
+      "instrument": "Point-of-care glucose meter",
+      "howToMeasure": "Capillary glucose on waking, before breakfast, with a glucose meter (i-STAT or digital meter). Record the specimen and meal context.",
+      "refSource": "NASA OSDR OSD-575 (Comprehensive Metabolic Panel): terrestrial reference ranges from Quest Diagnostics.",
+      "whyItMatters": "NASA lists inadequate food and nutrition among long-mission risks. OSDR data show glucose values outside the terrestrial range after a short flight."
+    },
+    "bloodPressure": {
+      "label": "Blood pressure",
+      "instrument": "Blood pressure monitor (SunTech Tango) or automatic cuff",
+      "howToMeasure": "Cuff measurement at rest. On the ISS, the SunTech Tango (triggered by the ECG R wave, Dimensional K-Sound analysis) separates Korotkoff sounds from noise and treadmill impacts, giving reliable readings in microgravity.",
+      "refSource": "Standard terrestrial range; NASA HRP Risk of Cardiovascular Adaptations (hypotension, orthostatic intolerance).",
+      "whyItMatters": "In microgravity, fluids shift towards the head and blood volume drops. Orthostatic intolerance can appear on return to gravity."
+    },
+    "heartRate": {
+      "label": "Heart rate",
+      "instrument": "CSA Bio-Monitor (smart shirt) or 12-lead ECG",
+      "howToMeasure": "Continuous ECG (CSA Bio-Monitor, Philips EASI 12-lead) or chest sensor. The Bio-Monitor can be worn during sleep and exercise. A manual 60-second pulse count is the onboard fallback.",
+      "refSource": "Terrestrial reference range; NASA HRP cardiovascular deconditioning.",
+      "whyItMatters": "Resting heart rate, read in the same conditions over time, helps follow cardiovascular adaptation and fatigue."
+    },
+    "bodyTemperature": {
+      "label": "Body temperature",
+      "instrument": "Bio-Monitor skin sensor or thermometer",
+      "howToMeasure": "Skin temperature (CSA Bio-Monitor) or oral thermometer. Skin and oral readings are separate series: heat exchange at the skin changes in microgravity.",
+      "refSource": "Terrestrial reference range; NASA HRP risk of viral reactivation (fever).",
+      "whyItMatters": "Spaceflight stressors can reactivate dormant viruses. A fever is a symptom the CMO needs to know about."
+    },
+    "sleepHours": {
+      "label": "Sleep duration",
+      "instrument": "Actiwatch or sleep diary",
+      "howToMeasure": "Actigraphy (Actiwatch) or a sleep diary entry in the app. On the ISS, crews see about 16 sunrises and sunsets per day, which disrupts the sleep-wake cycle.",
+      "refSource": "Tool heuristic: NASA HRP does not publish a spaceflight sleep threshold. HEXTA states its own demo rule explicitly (SLEEP-001, demo only).",
+      "disclaimer": "Tool threshold, not a NASA standard.",
+      "whyItMatters": "NASA identifies inadequate sleep and irregular schedules as a risk: short nights are associated with lower alertness and execution errors."
+    },
+    "mood": {
+      "label": "Mood",
+      "instrument": "Self-rating in the app",
+      "howToMeasure": "One-tap self-rating from 1 (very low) to 5 (very good). It can be read alongside cabin CO2, since mood changes have been reported from 5,000 ppm.",
+      "refSource": "Scale built by HEXTA: NASA HRP treats behavioural health as a major risk but sets no numerical scale.",
+      "disclaimer": "HEXTA scale, not a validated clinical scale.",
+      "whyItMatters": "Isolation and confinement affect behaviour and teamwork. A descriptive mood history gives context to the CMO review.",
+      "unit": "scale 1-5"
+    },
+    "co2Cabin": {
+      "label": "Cabin CO2",
+      "instrument": "ISS Major Constituent Analyzer (MCA); CDMK handheld sensor",
+      "howToMeasure": "ISS Major Constituent Analyzer (MCA), a multi-point mass spectrometer. In the cabin: CDMK sensor. Compare a full one-hour average in mmHg.",
+      "refSource": "NASA-STD-3001 Vol. 2 V2 6004: one-hour average at or below 3 mmHg. ECLSS design goal: 2 mmHg (2,600 ppm). Historical ISS limit: 5,300 ppm.",
+      "whyItMatters": "On the ISS, the odds of a crew member reporting a headache rose with CO2. It is an environment reading, never a body reading."
+    },
+    "o2Partial": {
+      "label": "Oxygen partial pressure",
+      "instrument": "Module partial pressure sensor",
+      "howToMeasure": "Partial pressure sensor in the module. During EVA preparation it follows the suit purge.",
+      "refSource": "NASA-STD-3000 5.1.2.2.1: 151.3 mmHg at sea level; 137 mmHg alert limit (loss of night vision); 114 mmHg seriously impaired performance. The ISS keeps 146 to 178 mmHg.",
+      "whyItMatters": "Low oxygen can impair performance before any visible symptom appears."
+    },
+    "cabinTemperature": {
+      "label": "Cabin temperature",
+      "instrument": "Module temperature probe (ECLSS)",
+      "howToMeasure": "Module temperature probe (ECLSS).",
+      "refSource": "NASA-STD-3000: 65-80 °F in operations; 60-85 °F in a 28-day contingency.",
+      "whyItMatters": "Thermal comfort is a habitability factor that affects sleep and performance."
+    },
+    "radiationDose": {
+      "label": "Radiation dose",
+      "instrument": "CANS (Canadian Active Neutron Spectrometer)",
+      "howToMeasure": "CANS is a compact, autonomous instrument that runs continuously. Earlier ISS instruments include MOSFET, EVARM and Radi-N/Radi-N2.",
+      "refSource": "To be calibrated for the environment: thresholds depend on shielding. CSA reports that neutrons make up about 30% of the total dose on the ISS.",
+      "disclaimer": "Indicative thresholds, to be validated for the mission shielding.",
+      "whyItMatters": "Radiation exposure accumulates over a career. Instrument readings describe the environment, not an individual dose."
+    }
+  },
+  "advice": {
+    "advice-glucose-low": {
+      "title": "Glucose below the reference range",
+      "condition": "value < 70 mg/dL",
+      "body": "NASA OSDR (OSD-575) documents low values after flight: crew member C003 measured 36 mg/dL at R+45 against a terrestrial reference of 65-99 mg/dL. NASA HRP lists inadequate nutrition among long-mission risks. Action 1: re-check after eating carbohydrates and record the value. Action 2: tell the CMO. Action 3: adjust the next meal ration. NASA gives no medication guidance for an autonomous crew member.",
+      "doNot": "Do not prescribe any treatment. The tool reports and escalates."
+    },
+    "advice-glucose-high": {
+      "title": "Glucose above the watch level",
+      "condition": "value > 140 mg/dL",
+      "body": "Glucose can become unstable in microgravity and NASA HRP documents the nutrition risk. Reference data: NASA OSDR OSD-575 provides 28 glucose values for 4 astronauts (7 timepoints), reference range 65-99 mg/dL. Action: check carbohydrate intake, re-check before exercise and record the 7-day trend.",
+      "doNot": "No clinical interpretation and no change of treatment."
+    },
+    "advice-sleep-deficit": {
+      "title": "Sleep deficit and circadian misalignment",
+      "condition": "sleep < 6 h per 24 h, or a change > 20% from the 7-day baseline",
+      "body": "NASA HRP identifies inadequate sleep and irregular schedules as a risk: work overload, irregular light-dark cycles and disrupted sleep patterns. NASA countermeasures include LED lighting that mimics the Earth day-night cycle, research on light and caffeine and the body clock, and dedicated time for relaxation and personal care. On the ISS, crews see about 16 sunrises and sunsets per day. Associated risk: lower performance and execution errors.",
+      "doNot": "Do not recommend medication. Point to lighting and schedule adjustments."
+    },
+    "advice-co2-headache": {
+      "title": "Possible high CO2: headache and lower performance",
+      "condition": "cabin CO2 one-hour average > 3 mmHg, or reported fatigue or heavy head",
+      "body": "On the ISS, for each 1 mmHg increase in CO2, the odds of a crew member reporting a headache roughly doubled (Law et al., ISS expeditions 2 to 31). Crews reported fatigue and a heavy head from 3,000 ppm, missed or slower procedure steps at 3,500-4,000 ppm, headaches at 4,000-4,500 ppm and mood changes from 5,000 ppm. NASA-STD-3001 target: one-hour average at or below 3 mmHg; ECLSS design goal: 2 mmHg (2,600 ppm). Action: check ventilation, report it and note any link with mood and fatigue.",
+      "doNot": "CO2 is an environment reading, not a body reading. Do not attribute the cause to the crew member."
+    },
+    "advice-orthostatic": {
+      "title": "Cardiovascular deconditioning: watch for low blood pressure",
+      "condition": "resting systolic < 90 mmHg, or resting heart rate > baseline + 15%",
+      "body": "In microgravity, blood and fluids shift from the legs and abdomen towards the heart and head, and the blood volume in the heart and vessels drops by 10 to 15%. The heart becomes more spherical and the muscles that constrict vessels weaken, reducing blood flow control. NASA notes that lower-body compression garments and drinking plenty of fluids before landing help prevent low blood pressure. Risk of orthostatic intolerance on return: dizziness, fainting. Action: measure blood pressure at rest and standing, report any episode and check that compression garments are worn.",
+      "doNot": "No advice on doses or fluid amounts without the CMO."
+    },
+    "advice-immune-viral": {
+      "title": "Possible viral reactivation",
+      "condition": "lymphocytes outside the range on 2 consecutive timepoints, or symptoms (rash, fever)",
+      "body": "NASA HRP writes that spaceflight stressors can wake dormant viruses in astronauts' bodies, leading to rashes and other symptoms. The NASA OSDR OSD-569 dataset provides complete blood counts for 4 astronauts at 7 timepoints (553 values), a reference to place a drift in context. Action: measure and record, check habitat hygiene, and report any rash or fever to the CMO.",
+      "doNot": "Do not interpret a blood count. Report and record."
+    },
+    "advice-bone-loss": {
+      "title": "Spaceflight bone loss",
+      "condition": "bone density (spine, hips) falling by more than 1% per month, or low serum calcium",
+      "body": "NASA HRP documents a loss of bone mineral density of 1 to 2% per month in microgravity (hips and spine), with 15 to 20% muscle atrophy over 6 months. Countermeasures include daily exercise (about 2.5 hours per day on the ISS), especially resistance exercise on ARED and cardio, and adapted nutrition. Bone loss is not fully reversed by rehabilitation after return.",
+      "doNot": "No treatment decision. Report and document the trend."
+    },
+    "advice-hypoxia": {
+      "title": "Hypoxia: watch for loss of night vision and impaired performance",
+      "condition": "pO2 < 137 mmHg (alert limit), or symptoms such as loss of night vision or drowsiness",
+      "body": "NASA-STD-3000: normal oxygen partial pressure is 151.3 mmHg at sea level. At 137 mmHg, the alert limit, night vision starts to decline. At 114 mmHg, performance is seriously impaired, without any obvious outward symptom. The ISS keeps pO2 between 146 and 178 mmHg. Action: report immediately, check oxygen supply and ventilation, and note the SpO2 reading.",
+      "doNot": "Do not prescribe oxygen. Escalate immediately."
+    }
+  },
+  "osdrCategories": {
+    "Hématologie": "Haematology",
+    "Métabolique / Nutrition": "Metabolic / Nutrition"
+  },
+  "osdrLabels": {
+    "absolute_basophils": "Absolute basophils",
+    "absolute_eosinophils": "Absolute eosinophils",
+    "absolute_lymphocytes": "Absolute lymphocytes",
+    "absolute_monocytes": "Absolute monocytes",
+    "absolute_neutrophils": "Absolute neutrophils",
+    "albumin": "Albumin",
+    "albumin/globulin_ratio": "Albumin/globulin ratio",
+    "alkaline_phosphatase": "Alkaline phosphatase",
+    "alt": "ALT",
+    "ast": "AST",
+    "basophils": "Basophils",
+    "bilirubin;_total": "Total bilirubin",
+    "bun/creatinine_ratio": "BUN/creatinine ratio",
+    "calcium": "Calcium",
+    "carbon_dioxide": "Total CO2",
+    "chloride": "Chloride",
+    "creatinine": "Creatinine",
+    "egfr_african_american": "eGFR (African American)",
+    "egfr_non-afr._american": "eGFR (non-African American)",
+    "eosinophils": "Eosinophils",
+    "globulin": "Globulin",
+    "glucose": "Glucose",
+    "hematocrit": "Haematocrit",
+    "hematocrit_(female)": "Haematocrit (female)",
+    "hemoglobin": "Haemoglobin",
+    "hemoglobin_(female)": "Haemoglobin (female)",
+    "lymphocytes": "Lymphocytes",
+    "mch": "MCH",
+    "mchc": "MCHC",
+    "mcv": "MCV",
+    "monocytes": "Monocytes",
+    "mpv": "MPV",
+    "neutrophils": "Neutrophils",
+    "platelet_count": "Platelet count",
+    "potassium": "Potassium",
+    "protein;_total": "Total protein",
+    "rdw": "RDW",
+    "red_blood_cell_count": "Red blood cell count",
+    "red_blood_cell_count_(female)": "Red blood cell count (female)",
+    "sodium": "Sodium",
+    "urea_nitrogen_(bun)": "Urea nitrogen (BUN)",
+    "white_blood_cell_count": "White blood cell count"
+  }
+}

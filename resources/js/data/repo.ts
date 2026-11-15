@@ -1,5 +1,6 @@
 import { compareToInterval, LAB_META, type LabResult } from '../domain/labs';
 import { acknowledge, canonicalJson, EMPTY_QUEUE, enqueue, fail, RECEIVER_LABEL, retry, sha256Hex, startSending, type ReceiverId, type Receipt } from '../domain/queue';
+import { syncAlertReview, syncAnswer, syncCheckin, syncClose, syncDemoClock, syncDemoReset, syncFollowUp, syncLab, syncMeasurement, syncReviewRequest } from './sync';
 import { DEFAULT_REMINDER, dismissBanner, evaluateTask, newTask, rescheduleTask, snoozeTask, type CheckinTask, type ReminderSettings } from '../domain/reminder';
 import { episodeKey, evaluateSleep001, personalReference, SLEEP_RULE } from '../domain/sleep';
 import { awaitingReply, type ReviewKind, type SymptomAttachment, type SymptomInput, type SymptomReport, type SymptomReviewEntry } from '../domain/symptoms';
@@ -28,6 +29,13 @@ export async function readNow(ws: WorkspaceId): Promise<number> {
 
 export async function setDemoClock(ts: number): Promise<void> {
     await kvSet('demo', 'clock', ts);
+    void syncDemoClock(ts);
+}
+
+/** Mirrors a request answer to the HEXTA API once it is saved locally. */
+async function syncAnswerFor(ws: WorkspaceId, requestId: string): Promise<void> {
+    const req = await db.requests.get(requestId);
+    if (req?.response) await syncAnswer(ws, requestId, req.response.id, req.response.authorId, req.response.text, req.response.observationIds);
 }
 
 export async function ensureSeeded(ws: WorkspaceId): Promise<void> {
@@ -41,6 +49,7 @@ export async function resetDemo(scenario: 138 | 142): Promise<void> {
         for (const t of WS_TABLES) await db.table(t).where('ws').equals('demo').delete();
     });
     await seedWorkspace('demo', scenario);
+    void syncDemoReset(scenario);
 }
 
 /* ------------------------------------------------------------------ members */
@@ -311,6 +320,7 @@ export async function submitCheckin(ws: WorkspaceId, crewId: string, form: Check
         if (answersRequestId) await answerRequestInTx(ws, answersRequestId, crewId, 'New check-in saved.', ids, now);
         newAlert = await evaluateRules(ws, crewId, now);
     });
+    void syncCheckin(ws, crewId, day, form, sleepMinutes, record.id, iso).then(() => (answersRequestId ? syncAnswerFor(ws, answersRequestId) : undefined));
     return { checkin: record, newAlert };
 }
 
@@ -355,6 +365,11 @@ export async function recordReview(ws: WorkspaceId, alertKey: string, cmoId: str
         const n = await db.notifications.where('eventKey').equals(alertKey).first();
         if (n) await db.notifications.update(n.id, { active: false, readAt: n.readAt ?? new Date(now).toISOString() });
     });
+    const reviewed = await db.alerts.get(alertKey);
+    if (!reviewed || reviewed.ws !== ws) return;
+    const last = reviewed.reviews[reviewed.reviews.length - 1];
+    if (last?.requestId && followUp) await syncFollowUp(ws, last.requestId, reviewed.crewId, cmoId, followUp.label, followUp.reason, followUp.measurement);
+    void syncAlertReview(ws, reviewed.crewId, reviewed.ruleId, reviewed.startDay, cmoId, note, Boolean(followUp), last?.at ?? new Date(now).toISOString());
 }
 
 /* ------------------------------------------------------------------ follow-up (M04) */
@@ -372,6 +387,7 @@ export async function createFollowUp(ws: WorkspaceId, crewId: string, cmoId: str
     await db.transaction('rw', [db.requests, db.notifications], async () => {
         row = await createFollowUpInTx(ws, crewId, cmoId, label, reason, measurement, { type: 'none', ids: [] }, now);
     });
+    void syncFollowUp(ws, row.id, crewId, cmoId, label, reason, measurement);
     return row;
 }
 
@@ -383,6 +399,7 @@ export async function requestReview(ws: WorkspaceId, crewId: string, reason: str
         await db.requests.add(row);
         await notify({ eventKey: `review|${row.id}`, ws, recipientId: cfg.cmoId, recipientRole: 'cmo', subjectCrewId: crewId, type: 'review-requested', title: 'Crew review requested', body: `${memberStatic(ws, crewId).alias}: ${reason}`, link: `/crew/${crewId}?request=${row.id}` }, now);
     });
+    void syncReviewRequest(ws, row.id, crewId, reason, evidenceIds);
     return row;
 }
 
@@ -403,6 +420,7 @@ async function answerRequestInTx(ws: WorkspaceId, requestId: string, authorId: s
 
 export async function answerRequest(ws: WorkspaceId, requestId: string, authorId: string, text: string, observationIds: string[], now: number): Promise<void> {
     await db.transaction('rw', [db.requests, db.notifications], () => answerRequestInTx(ws, requestId, authorId, text, observationIds, now));
+    void syncAnswerFor(ws, requestId);
 }
 
 export async function closeRequest(ws: WorkspaceId, requestId: string, now: number): Promise<void> {
@@ -413,6 +431,8 @@ export async function closeRequest(ws: WorkspaceId, requestId: string, now: numb
         const notifications = await db.notifications.where('ws').equals(ws).toArray();
         for (const n of notifications.filter(n => n.link.includes(requestId))) await db.notifications.update(n.id, { active: false, readAt: n.readAt ?? new Date(now).toISOString() });
     });
+    const closed = await db.requests.get(requestId);
+    if (closed?.status === 'closed') void syncClose(ws, requestId, WORKSPACES[ws].cmoId);
 }
 
 export async function requestsFor(ws: WorkspaceId, crewId?: string): Promise<RequestRow[]> {
@@ -428,6 +448,7 @@ export async function addMeasurement(ws: WorkspaceId, crewId: string, data: NewO
         row = await putObservation(ws, crewId, data, new Date(now).toISOString(), false);
         if (answersRequestId) await answerRequestInTx(ws, answersRequestId, crewId, `${data.variable === 'bp' ? 'Blood pressure' : data.variable} measured.`, [row.id], now);
     });
+    void syncMeasurement(ws, crewId, row).then(() => (answersRequestId ? syncAnswerFor(ws, answersRequestId) : undefined));
     return row;
 }
 
@@ -450,6 +471,7 @@ export async function addLab(ws: WorkspaceId, data: Omit<LabResult, 'id' | 'ws' 
         }
         await db.labs.add(row);
     });
+    void syncLab(ws, row, supersedes);
     return row;
 }
 
@@ -550,7 +572,7 @@ export interface LinkState {
 
 /**
  * Processes queued reports. The simulated ground receiver lives in IndexedDB (no Laravel call) and
- * answers only when the simulated ground link is up. The Laravel test receiver is a distinct
+ * answers only when the simulated ground link is up. The MongoDB Atlas ground receiver (HEXTA API) is a distinct
  * destination reached over the browser network. Only an acknowledgement from the selected
  * receiver marks a report Received; any failure leaves it in the queue with Retry available.
  */
@@ -613,7 +635,7 @@ async function simulatedReceive(r: ReportRow, now: () => number): Promise<Receip
 
 async function laravelReceive(r: ReportRow, fetchImpl: typeof fetch): Promise<Receipt> {
     const res = await fetchImpl(`/api/v1/reports/${r.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ content: r.content }) });
-    if (!res.ok) throw new Error(`Laravel test receiver answered ${res.status}`);
+    if (!res.ok) throw new Error(`MongoDB Atlas ground receiver answered ${res.status}`);
     const body = (await res.json()) as Receipt;
     if (body.reportId !== r.id || body.sha256 !== r.sha256) throw new Error('Receipt does not match the report');
     return body;

@@ -32,6 +32,33 @@ return [
 
     'connections' => [
 
+        /*
+        | Ground receiver storage. Same server as the board data by default;
+        | point GROUND_MONGODB_URI at a separate Atlas cluster to model the
+        | real separation between the spacecraft and the ground.
+        */
+        'ground' => [
+            'driver' => 'mongodb',
+            'dsn' => env('GROUND_MONGODB_URI', env('MONGODB_URI', 'mongodb://127.0.0.1:27017/?replicaSet=rs0')),
+            'database' => env('GROUND_MONGODB_DATABASE', env('MONGODB_DATABASE', 'hexta_demo')),
+            'options' => [
+                'appname' => 'hexta-ground-receiver',
+                'serverSelectionTimeoutMS' => (int) env('MONGODB_TIMEOUT_MS', 5000),
+                'connectTimeoutMS' => (int) env('MONGODB_TIMEOUT_MS', 5000),
+            ],
+        ],
+
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'dsn' => env('MONGODB_URI', 'mongodb://127.0.0.1:27017/?replicaSet=rs0'),
+            'database' => env('MONGODB_DATABASE', 'hexta_demo'),
+            'options' => [
+                'appname' => 'hexta-backend',
+                'serverSelectionTimeoutMS' => (int) env('MONGODB_TIMEOUT_MS', 5000),
+                'connectTimeoutMS' => (int) env('MONGODB_TIMEOUT_MS', 5000),
+            ],
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
