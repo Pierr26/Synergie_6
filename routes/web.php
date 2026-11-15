@@ -18,7 +18,7 @@ Route::middleware(NoStoreResponse::class)->group(function () {
         Route::patch('/cases/{case}', [CrewAccountController::class, 'update'])->whereUuid('case');
         Route::post('/reports', [CrewAccountController::class, 'report']);
         Route::post('/reports/{report}/queue', [CrewAccountController::class, 'queue'])->whereUuid('report');
-        Route::get('/{page}', [CrewAccountController::class, 'index'])->where('page', 'today|check-in|symptoms|trends|body|follow-up|reviews|reports|transmission');
+        Route::get('/{page}', [CrewAccountController::class, 'index'])->where('page', 'today|check-in|symptoms|trends|body|follow-up|reviews|teammates|reports|transmission');
     });
 });
 

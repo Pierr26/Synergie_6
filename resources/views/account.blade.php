@@ -1,5 +1,5 @@
 @extends('layouts.account')
-@section('title', $navTitle = ['today'=>'Today','check-in'=>'Daily Check-in','reviews'=>'Review queue','trends'=>'Trends','body'=>'Body & Risks','symptoms'=>'Report a Symptom','follow-up'=>'Follow-up','reports'=>'Reports','transmission'=>'Ground transmission'][$page])
+@section('title', ['today'=>'Today','check-in'=>'Daily Check-in','reviews'=>'Review queue','teammates'=>'Team','trends'=>'Trends','body'=>'Body & Risks','symptoms'=>'Report a Symptom','follow-up'=>'Follow-up','reports'=>'Reports','transmission'=>'Ground transmission'][$page])
 @section('content')
 @php
     $follow = $cases->firstWhere('status', 'follow-up');
@@ -10,12 +10,23 @@
 <section class="today-hero"><div class="today-copy"><span class="mission-kicker">YOUR NEXT STEP</span>
     <h2>{{ $follow ? 'Respond to follow-up' : (!$todayCheckin ? 'A moment for your health.' : ($pending ? 'Crew review pending' : 'Your check-in is saved.')) }}</h2>
     <p>{{ $follow ? collect($follow->thread)->last()['text'] : (!$todayCheckin ? 'Sleep duration and drowsiness first. About one minute.' : 'Your check-in is saved on the onboard server and available to your medical officer.') }}</p>
-    <a class="btn btn-primary" href="{{ $follow ? '/account/cases/'.$follow->id.'#response' : (!$todayCheckin ? '/account/check-in' : ($pending ? '/account/cases/'.$pending->id : '/account/cases/'.$todayCheckin->id)) }}">{{ $follow ? 'Respond to follow-up' : (!$todayCheckin ? 'Start check-in' : ($pending ? 'Track crew review' : 'View today’s summary')) }}</a>
+    @if($follow || ($pending && $todayCheckin))
+        <a class="btn btn-primary" href="{{ '/account/cases/'.($follow ? $follow->id.'#response' : $pending->id) }}">{{ $follow ? 'Respond to follow-up' : 'Track crew review' }}</a>
+    @endif
 </div><figure class="today-window"><img src="/assets/illustrations/lunar-window.webp" width="1200" height="800" alt="Illustrated lunar window"><figcaption>HEXTA · mission illustration</figcaption></figure></section>
-<nav class="journey-links" aria-label="Other available actions"><a class="journey-link" href="/account/check-in">Daily Check-in</a><a class="journey-link" href="/account/symptoms">Report a Symptom</a><a class="journey-link" href="/account/follow-up">Follow-up</a></nav>
+<nav class="journey-links" aria-label="Other available actions"><a class="journey-link" href="/account/symptoms">Report a Symptom</a><a class="journey-link" href="/account/follow-up">Follow-up</a></nav>
 @endif
 @if($page === 'check-in' || $page === 'symptoms')
-@if($user->role !== 'astronaut')<p class="card">Open a crew member’s case to review their observations.</p>
+@if($user->role !== 'astronaut')
+    @if($page === 'check-in')
+        <section class="card"><h2>On-board check-ins</h2>
+        @forelse($cases->where('kind', 'check-in') as $case)
+            <a class="review-row" href="/account/cases/{{ $case->id }}"><span><b>{{ $case->crew->name }}</b><span>{{ $case->data['sleep_hours'] }} h {{ $case->data['sleep_minutes'] }} min · Drowsiness {{ $case->data['drowsiness'] }}/9</span><small>{{ $case->created_at->format('Y-m-d H:i') }} UTC</small></span><span class="badge badge-info">{{ $case->statusLabel() }}</span></a>
+        @empty<p>No check-in submitted yet.</p>@endforelse
+        </section>
+    @else
+        <p class="card">Open a crew member’s case to review their observations.</p>
+    @endif
 @else
 <form class="card" method="post" action="/account/cases" enctype="multipart/form-data" data-account-draft="{{ $page === 'check-in' ? 'check-in' : 'symptom' }}">@csrf
     <input type="hidden" name="id" value="{{ old('id', (string) Illuminate\Support\Str::uuid()) }}"><input type="hidden" name="kind" value="{{ $page === 'check-in' ? 'check-in' : 'symptom' }}">
@@ -35,6 +46,7 @@
 </form>
 @endif
 @endif
+@if($page === 'teammates') @include('partials.account-teammates') @endif
 @if($page === 'reviews' || $page === 'follow-up')
 <section class="card"><h2>{{ $page === 'reviews' ? 'Cases to review' : 'Requests, responses & reviews' }}</h2>
 @forelse($cases->sortBy(fn($c) => $c->status === 'reviewed' ? 2 : ($c->status === 'follow-up' ? 1 : 0)) as $case)

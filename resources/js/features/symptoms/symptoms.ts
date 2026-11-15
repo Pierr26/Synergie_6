@@ -5,7 +5,7 @@
  */
 import { bus } from '../../bus';
 import { icon } from '../../components/icons';
-import { badge, pageHead, simTag, toast } from '../../components/ui';
+import { badge, pageHead, toast } from '../../components/ui';
 import * as repo from '../../data/repo';
 import { awaitingReply, BODY_AREAS, symptomReviewState, validatePhoto, validateSubmission, type ReviewKind, type SymptomInput, type SymptomReport, type SymptomReviewEntry } from '../../domain/symptoms';
 import { hhmm, missionDay, timeOnDay, utcStamp } from '../../domain/time';
@@ -243,7 +243,7 @@ export async function symptomSection(viewer: 'astronaut' | 'cmo', crewId: string
     const threads = await Promise.all(rows.map((r) => repo.symptomThread(ws(), r.id)));
     const hasDraft = all.some((r) => r.status === 'draft');
     return html`<section class="card" id="symptoms" aria-labelledby="sym-h" data-mount="symptom-photos">
-      <div class="card-h"><h2 id="sym-h">Symptom reports</h2>${viewer === 'astronaut' ? html`<a class="btn btn-ghost btn-small" href="/symptoms" data-link>${icon('camera')}${hasDraft ? 'Resume draft' : 'Report a symptom'}</a>` : simTag()}</div>
+      <div class="card-h"><h2 id="sym-h">Symptom reports</h2>${viewer === 'astronaut' ? html`<a class="btn btn-ghost btn-small" href="/symptoms" data-link>${icon('camera')}${hasDraft ? 'Resume draft' : 'Report a symptom'}</a>` : ''}</div>
       ${viewer === 'astronaut' ? html`<p class="hint">Document something you can see (skin, eye, swelling) with a description and an optional photo. Your CMO reviews it on board.</p>` : html`<p class="hint">Submitted by the crew member for onboard review. Photos stay on board and are not part of ground reports.</p>`}
       ${rows.length ? rows.map((r, i) => reportCard(r, threads[i], viewer, r.id === highlight)) : html`<p class="muted">${viewer === 'cmo' ? 'No symptom report submitted by this member.' : 'No symptom report yet.'}</p>`}
     </section>`;
@@ -263,7 +263,7 @@ export async function renderSymptomForm(): Promise<Html> {
     const err = (k: keyof typeof errors) => (errors[k] ? html`<p class="error">${icon('review')}${errors[k]}</p>` : '');
     return html`
     <p class="crumbs"><a href="/follow-up#symptoms" data-link>${icon('back')}Follow-up</a></p>
-    ${pageHead('Report a symptom', 'Describe what you see and add a photo if it helps. Your crew medical officer reviews it on board.', simTag())}
+    ${pageHead('Report a symptom', 'Describe what you see and add a photo if it helps. Your crew medical officer reviews it on board.')}
     <div class="grid-2 sym-grid">
       <form class="card sym-form" data-action="symptom-save" data-mount="symptom-draft" novalidate>
         <p class="sym-saved" role="status">${draft ? html`${badge('Saved on this device', 'ok', 'device')} <span class="mono">${hhmm(Date.parse(draft.savedAt))} UTC</span> · you can leave and resume, even offline` : html`${badge('Not saved yet', 'muted', 'missing')} Save a draft or add a photo to keep it on this device`}</p>

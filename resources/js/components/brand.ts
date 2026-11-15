@@ -12,7 +12,6 @@ const CY = 310;
 const R = 136;
 const SAMPLES = 144;
 const TAU = Math.PI * 2;
-const DURATION_MS = 1500;
 const PX_PER_LAP = 1400;
 const DELAY = [0, 0.14, 0.28];
 
@@ -47,7 +46,7 @@ interface RingEls {
 }
 
 const state = { rot: [0, 0, 0], sat: [0, 0, 0] };
-let anim: { dir: number; from: number[]; t0: number | null } | null = null;
+let anim: { fromRotation: number; toRotation: number; fromSatellites: number[]; transition: Animation; duration: number } | null = null;
 let pendingScroll = 0;
 let raf = 0;
 let prevFrame = 0;
@@ -110,7 +109,7 @@ function draw(): void {
 
 function ease(x: number): number {
     const v = Math.max(0, Math.min(1, x));
-    return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
+    return v * v * (3 - 2 * v);
 }
 
 function tick(now: number): void {
@@ -118,18 +117,20 @@ function tick(now: number): void {
     let live = false;
     prevFrame = now;
     if (anim) {
-        if (anim.t0 === null) anim.t0 = now;
-        const p = Math.min(1, (now - anim.t0) / DURATION_MS);
         const a = anim;
+        const time = a.transition.currentTime;
+        const p = a.transition.playState === 'finished' || a.transition.playState === 'idle'
+            ? 1 : Math.min(1, typeof time === 'number' ? time / a.duration : 0);
+        const angle = a.fromRotation + (a.toRotation - a.fromRotation) * ease(p);
         RINGS.forEach((r, i) => {
             const e = ease((p - DELAY[i]) / (1 - DELAY[2]));
-            state.rot[i] = a.dir * TAU * ease(p);
-            state.sat[i] = a.from[i] + r.dir * Math.PI * e;
+            state.rot[i] = angle;
+            state.sat[i] = a.fromSatellites[i] + r.dir * Math.PI * e;
         });
         if (p >= 1) {
             RINGS.forEach((r, i) => {
                 state.rot[i] = 0;
-                state.sat[i] = (((a.from[i] + r.dir * Math.PI) % TAU) + TAU) % TAU;
+                state.sat[i] = ((state.sat[i] % TAU) + TAU) % TAU;
             });
             anim = null;
         } else live = true;
@@ -189,10 +190,13 @@ export function mountEmblem(svg: SVGSVGElement): void {
 }
 
 /** One full turn of the orbits: opening the sidebar turns one way, closing the other. */
-export function spinEmblem(opening: boolean): void {
-    if (reduceMotion()) return;
-    if (anim) state.rot = [0, 0, 0];
-    anim = { dir: opening ? 1 : -1, from: state.sat.slice(), t0: null };
+export function spinEmblem(opening: boolean, transition: Animation): void {
+    const duration = transition.effect?.getComputedTiming().duration;
+    if (reduceMotion() || typeof duration !== 'number' || duration <= 0) return;
+    const fromRotation = state.rot[0];
+    const turns = fromRotation / TAU;
+    const toRotation = (opening ? Math.floor(turns) + 1 : Math.ceil(turns) - 1) * TAU;
+    anim = { fromRotation, toRotation, fromSatellites: state.sat.slice(), transition, duration };
     run();
 }
 

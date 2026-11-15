@@ -10,7 +10,6 @@ const P: Record<string, string> = {
     checkin: '<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 13l3 3 5-6"/>',
     measure: '<path d="M4 14a8 8 0 1116 0"/><path d="M12 14l4-5"/><circle cx="12" cy="14" r="1.5"/>',
     trends: '<path d="M3 20h18"/><path d="M4 16l5-6 4 3 7-8"/>',
-    body: '<circle cx="12" cy="4.5" r="2.5"/><path d="M12 7v7M7 9.5l5 1.5 5-1.5M9 22l3-8 3 8"/>',
     followup: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8M8 13h5"/>',
     crew: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3.5 2.7-6 6-6s6 2.5 6 6M14 20c0-2.5 1.4-4.5 3-4.5s4 1.5 4 4.5"/>',
     report: '<path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h7M9 16h7"/>',
@@ -44,9 +43,11 @@ const P: Record<string, string> = {
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+    signout: '<path d="M10 4H4v16h6M9 12h11m-4-4 4 4-4 4"/>',
     stethoscope: '<path d="M6 3v6a4 4 0 008 0V3"/><path d="M10 13v3a5 5 0 0010 0v-2"/><circle cx="20" cy="12" r="2"/>',
 };
 
 export function icon(name: keyof typeof P | string, cls = ''): Html {
+    if (name === 'body') return raw(`<span class="ic body-risks-icon ${cls}" aria-hidden="true"></span>`);
     return raw(`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[name] ?? P.info}</svg>`);
 }

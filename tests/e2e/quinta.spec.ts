@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 /** Entry screen: guided demo is the default mode; pick a role card. */
 async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
     await page.goto('/');
-    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
-    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+    await page.getByRole('radio', { name: mode === 'explore' ? 'Free exploration' : 'Guided demo' }).click();
+    await page.locator(`.home-role[data-role="${roleId}"]`).click();
+    await page.locator('.home-entry-tools .home-enter').click();
 }
 
 /** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */
@@ -69,7 +70,7 @@ test('V09 + M03 · Today has one next step; snooze, saved summary and pending re
     await scenario(page, 'Advance 1 minute');
     await expect(page.locator('.today-copy')).toContainText('Check-in due');
     await shot(page, '02-today-due');
-    await page.locator('.today-copy').getByRole('link', { name: 'Start check-in' }).click();
+    await nav(page, 'Check-in');
     await expect(page.locator('#sleepHours')).toHaveValue('5');
     await expect(page.locator('#sleepMinutes')).toHaveValue('12');
     await page.getByRole('button', { name: 'Snooze 30 min' }).click();
@@ -90,7 +91,7 @@ test('V09 + M03 · Today has one next step; snooze, saved summary and pending re
     await shot(page, '04-checkin-saved-alert');
     await page.goto('/overview');
     await expect(page.locator('.today-copy h2')).toHaveText('Crew review pending');
-    await expect(page.locator('.today-copy')).toContainText('Today’s summary');
+    await expect(page.locator('.today-copy')).toContainText('Check-in saved');
     await shot(page, '05-today-after-save');
 });
 
@@ -309,7 +310,8 @@ test('M10 + V07 · first-access guide: skip, then reopen from Help', async ({ pa
         localStorage.removeItem('quinta.guide.astronaut');
         sessionStorage.setItem('keep-guides', '1');
     });
-    await page.locator('.role-card[data-role="astronaut"]').click();
+    await page.locator('.home-role[data-role="astronaut"]').click();
+    await page.locator('.home-entry-tools .home-enter').click();
     const dlg = page.getByRole('dialog');
     await expect(dlg).toContainText('Your daily check-in');
     await dlg.getByRole('button', { name: 'Skip guide' }).click();

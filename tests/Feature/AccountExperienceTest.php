@@ -47,6 +47,7 @@ class AccountExperienceTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $this->get('/account')->assertOk()->assertSee('ASTRONAUT')->assertSee('test-mission')->assertHeader('Cache-Control', 'no-store, private');
         $this->get('/account/reviews')->assertForbidden();
+        $this->get('/account/teammates')->assertForbidden();
         $this->post('/logout')->assertRedirect('/');
         $this->assertGuest();
     }
@@ -79,6 +80,8 @@ class AccountExperienceTest extends TestCase
         $this->actingAs($astronaut)->post('/account/cases', $input);
         $url = '/account/cases/'.$input['id'];
         $this->actingAs($cmo)->get('/account')->assertOk()->assertSee('Review queue')->assertSee($astronaut->name);
+        $this->get('/account/check-in')->assertOk()->assertSee('On-board check-ins')->assertSee($url);
+        $this->get('/account/teammates')->assertOk()->assertSee('Crew board')->assertSee('Crew sleep')->assertSee('Duty watch')->assertSee($url);
         $this->patch($url, ['action' => 'follow-up', 'text' => 'Please clarify sleep duration.', 'field' => 'sleep'])->assertRedirect();
         $this->actingAs($astronaut)->get('/account')->assertSee('Respond to follow-up');
         $this->get($url)->assertSee('Please clarify sleep duration.')->assertSee('Respond to follow-up');
@@ -101,6 +104,10 @@ class AccountExperienceTest extends TestCase
             $this->patch($url, ['action' => 'follow-up', 'text' => 'Access attempt'])->assertNotFound();
             $this->post('/account/cases', $input)->assertStatus($other->role === 'cmo' ? 403 : 404);
             $this->get('/account/trends')->assertDontSee($astronaut->name);
+            if ($other->role === 'cmo') {
+                $this->get('/account/teammates')->assertDontSee($astronaut->name);
+                $this->get('/account/check-in')->assertDontSee($astronaut->name);
+            }
         }
     }
 

@@ -10,14 +10,18 @@
     <link rel="apple-touch-icon" href="/assets/brand/hexta-icone-app-180.png">
     <link rel="manifest" href="/manifest.webmanifest">
     @vite(['resources/css/app.css', 'resources/js/main.ts'])
+    @if(request()->is('/'))
+        @include('partials.entry-transition')
+    @endif
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <div id="app" data-booting="true">
-        <div class="boot">
-            <img src="/assets/brand/hexta-logo.svg" alt="HEXTA" width="110" height="134">
-            <p>Loading crew health… Simulated crew data.</p>
-        </div>
+        @if(request()->is('/'))
+            <div class="home" aria-hidden="true"></div>
+        @else
+            <p class="boot" role="status">Loading crew health…</p>
+        @endif
     </div>
     <div id="status-region" class="sr-only" role="status" aria-live="polite"></div>
     <div id="toast-host" class="toast-host" aria-hidden="true"></div>

@@ -1,5 +1,5 @@
 import { icon } from '../../components/icons';
-import { badge, demoRuleTag, obsValue, pageHead, qualityBadge, simTag, sourceLabel } from '../../components/ui';
+import { badge, demoRuleTag, obsValue, pageHead, qualityBadge, sourceLabel } from '../../components/ui';
 import * as repo from '../../data/repo';
 import { formatValue, seriesKey, VARIABLE_META } from '../../domain/measurements';
 import { personalReference, SLEEP_RULE } from '../../domain/sleep';
@@ -197,7 +197,7 @@ export async function renderTrends(): Promise<Html> {
             ? gap < -30 ? `Last night was ${formatMinutes(-gap)} shorter than your usual.` : 'Your sleep is close to your usual.'
             : `${VARIABLE_META[metric].label}: ${formatValue(latest)} on Day ${latest.missionDay}${missingDays.length ? `, ${missingDays.length} day${missingDays.length > 1 ? 's' : ''} without a reading` : ''}.`;
     return html`
-    ${pageHead('Trends', html`${memberAlias} · Day ${fromDay}–${today} · values, methods and gaps`, html`<div class="head-tags">${simTag()}</div>`)}
+    ${pageHead('Trends', html`${memberAlias} · Day ${fromDay}–${today} · values, methods and gaps`)}
     <div class="trend-controls">
       ${app.role === 'cmo' ? html`<label class="inline-select">Crew member<select data-action="trend-member">${astronauts.map((m) => html`<option value="${m.id}" ${m.id === crewId ? 'selected' : ''}>${m.alias}</option>`)}</select></label>` : ''}
       <nav class="chips-nav metric-tabs" aria-label="Indicator">${METRICS.map((m) => html`<a href="${q({ metric: m })}" data-link class="${m === metric ? 'active' : ''}" ${m === metric ? html`aria-current="true"` : ''}>${VARIABLE_META[m].short}</a>`)}</nav>

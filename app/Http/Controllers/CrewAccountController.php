@@ -36,7 +36,7 @@ class CrewAccountController extends Controller
         if ($page === 'today' && $user->role === 'cmo') {
             $page = 'reviews';
         }
-        abort_if(in_array($page, ['reviews', 'reports', 'transmission'], true) && $user->role !== 'cmo', 403);
+        abort_if(in_array($page, ['reviews', 'teammates', 'reports', 'transmission'], true) && $user->role !== 'cmo', 403);
         $query = CrewCase::with('crew')->where('mission_id', $user->mission_id);
         if ($user->role !== 'cmo') {
             $query->where('user_id', $user->id);
