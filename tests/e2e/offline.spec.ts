@@ -1,10 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/** Entry screen: guided demo is the default mode; pick a role card. */
+/** Open the app as a role in a workspace (the home page itself no longer enters one). */
 async function enterAs(page: Page, roleId: 'astronaut' | 'cmo' | 'ground', mode: 'demo' | 'explore' = 'demo') {
+    // The home page no longer opens a workspace: store the choice the app reads at boot, then open the role's start view.
     await page.goto('/');
-    await page.getByRole('radio', { name: mode === 'explore' ? /Free sandbox/ : /Guided demo/ }).click();
-    await page.locator(`.role-card[data-role="${roleId}"]`).click();
+    await page.evaluate(([ws, role]) => {
+        localStorage.setItem('quinta.ws', ws);
+        localStorage.setItem('quinta.role', role);
+    }, [mode, roleId]);
+    await page.goto(roleId === 'astronaut' ? '/overview' : roleId === 'cmo' ? '/crew' : '/ground');
 }
 
 /** Progressive check-in: open a step from the stepper (0 sleep, 1 drowsiness, 2 extras, 3 review). */

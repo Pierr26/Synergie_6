@@ -22,6 +22,10 @@ function quintaServiceWorker(): Plugin {
                 '/assets/brand/favicon-32.png',
                 '/assets/brand/hexta-icone-app-180.png',
                 '/assets/illustrations/body-front.webp',
+                '/assets/illustrations/earthrise.webp',
+                '/assets/photos/astronaut-cupola.webp',
+                '/assets/photos/crew-medical-exam.webp',
+                '/assets/photos/mission-control-houston.webp',
                 '/assets/illustrations/lunar-window.webp',
                 '/assets/illustrations/simulated-skin-mark.webp',
             ];

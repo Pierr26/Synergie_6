@@ -115,12 +115,14 @@ export async function render(isNavigation = false): Promise<void> {
     rendering = true;
     try {
         if (!app.ws || app.route.segments.length === 0) {
+            // The home page holds no app state: a background refresh (offline status poll) must not rebuild it and drop focus.
+            if (!isNavigation && root.querySelector('.home')) return;
             const entry = (await renderEntry()).value;
             await withTransition(() => {
                 root.innerHTML = entry;
             }, isNavigation);
             root.removeAttribute('data-booting');
-            document.title = 'HEXTA · Crew health';
+            document.title = 'Crew health';
             if (isNavigation) (root.querySelector('h1') as HTMLElement | null)?.focus();
             if (EMBEDDED) parent.postMessage({ type: 'hexta-rendered', href: location.pathname + location.search + location.hash }, location.origin);
             return;
@@ -361,6 +363,7 @@ registerActions({
 
 /** Chip drop-downs (<details data-pop>): one open at a time, closed by an outside click, a choice inside, or Escape. */
 function closePops(except?: Element | null): void {
+    if (!root) return; // server-rendered pages (login, account) load this bundle without the app root
     root.querySelectorAll<HTMLDetailsElement>('details[data-pop][open]').forEach((d) => {
         if (d !== except) d.open = false;
     });
@@ -372,7 +375,7 @@ document.addEventListener('click', (e) => {
 }, true);
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const open = root.querySelector<HTMLDetailsElement>('details[data-pop][open]');
+    const open = root?.querySelector<HTMLDetailsElement>('details[data-pop][open]');
     if (!open) return;
     open.open = false;
     open.querySelector('summary')?.focus();
@@ -471,6 +474,7 @@ if (!root && document.querySelector('.account-app')) void import('./features/acc
 
 /** Tablet menu drawer: closes on Escape or a click outside the sidebar. */
 function closeDrawer(): void {
+    if (!root) return;
     const shell = root.querySelector<HTMLElement>('.app.drawer');
     if (!shell) return;
     shell.classList.remove('drawer');
