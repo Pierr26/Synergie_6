@@ -16,12 +16,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(DemoScenario $scenario): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Factories rely on Faker, a dev-only dependency: production seeds only the NASA data and the demo.
+        if (app()->environment('local', 'testing')) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
 
         $this->command->call('hexta:import-nasa-data');
         $scenario->install();
